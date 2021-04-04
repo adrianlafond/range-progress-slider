@@ -1,0 +1,12 @@
+.horizontal-range {
+  position: relative;
+  display: inline-block;
+  width: 8rem;
+  background-color: yellow;
+
+  &__input {
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+  }
+}
