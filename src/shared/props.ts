@@ -1,3 +1,5 @@
+import React from "react";
+
 export interface BaseRangeProps {
   min?: number;
   max?: number;
@@ -20,6 +22,10 @@ export interface MultipleRangeProps extends BaseRangeProps {
 }
 
 export type RangeProps = SingleRangeProps | MultipleRangeProps;
+
+export interface InteractiveRangeProps {
+  onChange?: (event: React.ChangeEvent) => void;
+}
 
 export const defaultRangeProps = {
   multiple: false,
