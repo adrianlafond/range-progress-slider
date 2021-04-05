@@ -32,12 +32,17 @@ const SingleRange: React.FC<Required<SingleRangeProps> & InternalRangeEvents> = 
   value,
   onChange,
 }) => (
-  <input
-    type="range"
-    className="horizontal-range__input"
-    value={value}
-    onChange={onChange}
-  />
+  <>
+    <div className="horizontal-range__track" />
+    <div className="horizontal-range__knob" />
+    <div className="horizontal-range__guide" />
+    <input
+      type="range"
+      className="horizontal-range__input"
+      value={value}
+      onChange={onChange}
+    />
+  </>
 );
 
 const MultipleRange: React.FC<Required<MultipleRangeProps> & InternalRangeEvents> = ({
