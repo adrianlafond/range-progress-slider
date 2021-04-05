@@ -12,10 +12,10 @@ describe('processSingleProps(), processMultipleProps() >', () => {
       expect(processSingleProps({ multiple: true }).multiple).toBe(false);
     });
     it('sets "multiple" to true in processMultipleProps() by default', () => {
-      expect(processSingleProps().multiple).toBe(true);
+      expect(processMultipleProps().multiple).toBe(true);
     });
     it('ensures "multiple" is true in processMultipleProps()', () => {
-      expect(processSingleProps({ multiple: false }).multiple).toBe(true);
+      expect(processMultipleProps({ multiple: false }).multiple).toBe(true);
     });
   });
 

@@ -11,7 +11,11 @@ import {
 } from '../shared';
 import './horizontal-range.scss';
 
-export const HorizontalRange: React.FC<RangeProps> = (props: RangeProps & InteractiveRangeProps) => {
+export interface HorizontalRangeProps extends InteractiveRangeProps {
+  width?: number | string;
+}
+
+export const HorizontalRange: React.FC<RangeProps & HorizontalRangeProps> = React.memo((props: RangeProps & HorizontalRangeProps) => {
   const multiple = getValueMultiple(props.multiple);
   const singleProps = !multiple ? processSingleProps(props) : null;
   const multiProps = multiple ? processMultipleProps(props) : null;
@@ -22,23 +26,25 @@ export const HorizontalRange: React.FC<RangeProps> = (props: RangeProps & Intera
 
   function updateSingleKnobPosition(value?: number) {
     if (singleProps && trackRef.current && knobRef.current) {
-      const trackWidth = trackRef.current.offsetWidth;
+      const trackWidth = typeof props.width === 'number' ? props.width : trackRef.current.offsetWidth;
       const knobWidth = knobRef.current.offsetWidth;
-      const min = 0;
-      const max = trackWidth - knobWidth;
-      const percent = (value != null ? value : singleProps.value) / 100;
-      knobRef.current.style.left = `${min + (max - min) * percent}px`;
+      const maxWidth = trackWidth - knobWidth;
+      const workValue = value != null ? value : singleProps.value;
+      const percent = (workValue - singleProps.min) / (singleProps.max - singleProps.min);
+      knobRef.current.style.left = `${maxWidth * percent}px`;
     }
   }
 
   function onRootElement(el: HTMLDivElement) {
     rootRef.current = el;
-    const track = rootRef.current.querySelector(`[data-range-item=track]`);
-    const knob = rootRef.current.querySelector(`[data-range-item=knob]`);
-    if (track && knob) {
-      trackRef.current = track as HTMLDivElement;
-      knobRef.current = knob as HTMLDivElement;
-      updateSingleKnobPosition();
+    if (rootRef.current) {
+      const track = rootRef.current.querySelector(`[data-range-item=track]`);
+      const knob = rootRef.current.querySelector(`[data-range-item=knob]`);
+      if (track && knob) {
+        trackRef.current = track as HTMLDivElement;
+        knobRef.current = knob as HTMLDivElement;
+        updateSingleKnobPosition();
+      }
     }
   }
 
@@ -63,7 +69,7 @@ export const HorizontalRange: React.FC<RangeProps> = (props: RangeProps & Intera
       }
     </div>
   );
-};
+});
 
 const SingleRange: React.FC<Required<SingleRangeProps> & SingleInternalRangeProps> = ({
   value,
