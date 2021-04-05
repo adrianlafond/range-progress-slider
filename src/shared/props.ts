@@ -1,5 +1,4 @@
 export interface BaseRangeProps {
-  multiple?: boolean;
   min?: number;
   max?: number;
   step?: number;
@@ -7,11 +6,13 @@ export interface BaseRangeProps {
 }
 
 export interface SingleRangeProps extends BaseRangeProps {
+  multiple?: false,
   value?: number;
   defaultValue?: number;
 }
 
 export interface MultipleRangeProps extends BaseRangeProps {
+  multiple?: true,
   value?: number[];
   defaultValue?: number[];
   independentKnobs?: boolean;
@@ -23,6 +24,7 @@ export type RangeProps = SingleRangeProps | MultipleRangeProps;
 export const defaultRangeProps = {
   multiple: false,
   value: 50,
+  defaultValue: 50,
   min: 0,
   max: 100,
   step: 1,

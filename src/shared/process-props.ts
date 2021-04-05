@@ -1,21 +1,47 @@
-import { RangeProps, defaultRangeProps } from './props';
+import { BaseRangeProps, RangeProps, defaultRangeProps, SingleRangeProps, MultipleRangeProps } from './props';
+
+/**
+ * Returns a valid value for the "multiple" property.
+ */
+export function getValueMultiple(value?: RangeProps['multiple']) {
+  return getValidBoolean(value, defaultRangeProps.multiple);
+}
+
+export function processSingleProps(props: RangeProps = { multiple: false }): Required<SingleRangeProps> {
+  const commonProps = processCommonProps(props);
+  const {min, max} = commonProps;
+  return {
+    ...commonProps,
+    multiple: false,
+    value: getValidValue(props.value, min, max),
+    defaultValue: getValidValue(props.defaultValue, min, max)
+  }
+}
+
+export function processMultipleProps(props: RangeProps = { multiple: true }): Required<MultipleRangeProps> {
+  const commonProps = processCommonProps(props);
+  const { min, max } = commonProps;
+  return {
+    ...commonProps,
+    multiple: true,
+    value: [getValidValue(props.value, min, max)],
+    defaultValue: [getValidValue(props.defaultValue, min, max)],
+    totalKnobs: defaultRangeProps.totalKnobs,
+    independentKnobs: defaultRangeProps.independentKnobs,
+  }
+}
 
 /**
  * Given an object of type RangeProps, returns a new object of Required<RangeProps>
  * where all properties are defined.
  */
-export function processProps(props: RangeProps = {}): Required<RangeProps> {
+function processCommonProps(props: RangeProps = { multiple: false }): Required<BaseRangeProps> {
   const [min, max] = getValidMinMax(props.min, props.max);
   return {
     min,
     max,
     step: getNumber(props.step, defaultRangeProps.step),
-    value: getValidValue(props.value, min, max),
-    defaultValue: getValidValue(props.defaultValue, min, max),
-    multiple: getValidBoolean(props.multiple, defaultRangeProps.multiple),
     readOnly: getValidBoolean(props.readOnly, defaultRangeProps.readOnly),
-    totalKnobs: defaultRangeProps.totalKnobs,
-    independentKnobs: defaultRangeProps.independentKnobs,
   };
 }
 
