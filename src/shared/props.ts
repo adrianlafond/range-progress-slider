@@ -21,11 +21,12 @@ export interface MultipleRangeProps extends BaseRangeProps {
   totalKnobs?: number;
 }
 
-export type RangeProps = SingleRangeProps | MultipleRangeProps;
-
 export interface InteractiveRangeProps {
-  onChange?: (event: React.ChangeEvent) => void;
+  style?: React.CSSProperties;
+  className?: string;
 }
+
+export type RangeProps = (SingleRangeProps | MultipleRangeProps) & InteractiveRangeProps;
 
 export const defaultRangeProps = {
   multiple: false,
