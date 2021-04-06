@@ -1,48 +1,96 @@
-import { processSingleProps, processMultipleProps } from './process-props';
+import { processProps } from './process-props';
 import { defaultRangeProps } from './props';
 
-describe('processSingleProps(), processMultipleProps() >', () => {
-  const funcs = [processSingleProps, processMultipleProps];
+describe('processProps() >', () => {
+  describe('mutliple >', () => {
+    it('returns false by default for "multiple"', () => {
+      expect(processProps().multiple).toBe(false);
+    });
+  });
 
-  describe('multiple >', () => {
-    it('sets "multiple" to false in processSingleProps() by default', () => {
-      expect(processSingleProps().multiple).toBe(false);
+  describe('singleProps, multipleProps >', () => {
+    it('returns singleProps but not multipleProps if multiple is false', () => {
+      const { singleProps, multipleProps } = processProps();
+      expect(singleProps).toBeDefined();
+      expect(singleProps).not.toBeNull();
+      expect(multipleProps).toBeNull();
     });
-    it('ensures "multiple" is false in processSingleProps()', () => {
-      expect(processSingleProps({ multiple: true }).multiple).toBe(false);
-    });
-    it('sets "multiple" to true in processMultipleProps() by default', () => {
-      expect(processMultipleProps().multiple).toBe(true);
-    });
-    it('ensures "multiple" is true in processMultipleProps()', () => {
-      expect(processMultipleProps({ multiple: false }).multiple).toBe(true);
+    it('returns multipleProps but not singleProps if multipe is true', () => {
+      const { singleProps, multipleProps } = processProps({ multiple: true });
+      expect(singleProps).toBeNull();
+      expect(multipleProps).toBeDefined();
+      expect(multipleProps).not.toBeNull();
     });
   });
 
   describe('min, max >', () => {
-    funcs.forEach(fn => {
-      describe(`${fn.name}() >`, () => {
-        it('returns an object with "min" and "max defined to default values if they are not already defined', () => {
-          const { min, max } = fn();
-          expect(min).toBe(defaultRangeProps.min);
-          expect(max).toBe(defaultRangeProps.max);
-        });
-        it('does not allow min to be greater than max', () => {
-          const { min, max } = fn({ min: 100, max: 50 });
-          expect(min).toBe(50);
-          expect(max).toBe(50);
-        });
+    describe('singleProps', () => {
+      it('returns an object with "min" and "max defined to default values if they are not already defined', () => {
+        const { min, max } = processProps().baseProps;
+        expect(min).toBe(defaultRangeProps.min);
+        expect(max).toBe(defaultRangeProps.max);
+      });
+      it('does not allow min to be greater than max', () => {
+        const { min, max } = processProps({ min: 100, max: 50 }).baseProps;
+        expect(min).toBe(50);
+        expect(max).toBe(50);
       });
     });
   });
 
-  describe('processSingleProps() value, defaultValue >', () => {
+  describe('step, disabled, readOnly >', () => {
+    it(`sets "step" to ${defaultRangeProps.step} by default`, () => {
+      expect(processProps().baseProps.step).toBe(defaultRangeProps.step);
+    });
+    it(`sets "disabled" to ${defaultRangeProps.disabled} by default`, () => {
+      expect(processProps().baseProps.disabled).toBe(defaultRangeProps.disabled);
+    });
+    it(`sets "readOnly" to ${defaultRangeProps.readOnly} by default`, () => {
+      expect(processProps().baseProps.readOnly).toBe(defaultRangeProps.readOnly);
+    });
+  });
+
+  describe('singleProps value >', () => {
     ['value', 'defaultValue'].forEach(key => {
-      it(`sets value by default halfway between min and max`, () => {
+      it(`sets ${key} by default halfway between min and max`, () => {
         type valueType = 'value' | 'defaultValue';
-        expect(processSingleProps({ min: 0, max: 100 })[key as valueType]).toBe(50);
-        expect(processSingleProps({ min: -100, max: -50 })[key as valueType]).toBe(-75);
-        expect(processSingleProps({ min: -0.5, max: 1.0 })[key as valueType]).toBe(0.25);
+        expect(processProps({ min: 0, max: 100 }).singleProps![key as valueType]).toBe(50);
+        expect(processProps({ min: -100, max: -50 }).singleProps![key as valueType]).toBe(-75);
+        expect(processProps({ min: -0.5, max: 1.0 }).singleProps![key as valueType]).toBe(0.25);
+      });
+    });
+  });
+
+  describe('data attributes >', () => {
+    it('returns an empty object if no data attributes are found', () => {
+      expect(processProps().dataProps).toEqual({});
+    });
+    it('returns an object with all data atttributes', () => {
+      expect(processProps({
+        multiple: true,
+        'data-foo': 'bar',
+        'data-test': 'ok',
+      }).dataProps).toEqual({
+          'data-foo': 'bar',
+          'data-test': 'ok',
+      });
+    });
+  });
+
+  describe('other props >', () => {
+    it('returns an empty object if no data attributes are found', () => {
+      expect(processProps().otherProps).toEqual({});
+    });
+    it('returns an object with all other props', () => {
+      const func = () => undefined;
+      expect(processProps({
+        step: 5,
+        'data-foo': 'bar',
+        foo: 'bar',
+        onEvent: func,
+      }).otherProps).toEqual({
+        foo: 'bar',
+        onEvent: func,
       });
     });
   });

@@ -10,21 +10,23 @@ export const Demo = () => {
       <h1>range-progress-slider</h1>
 
       <div>
-        <label>Uncontrolled</label>
-        <HorizontalRange data-foo="bar" onKeyDown={event => console.log(event.key)} onChange={event => console.log((event.target as HTMLInputElement).value)} />
+        <label style={{ marginRight: '1rem' }}>Uncontrolled</label>
+        <HorizontalRange data-foo="bar" />
       </div>
 
-      <div>
-        <label>Controlled</label>
-        <HorizontalRange value={value} onChange={event => {
-          const target = event.target as HTMLInputElement;
-          setValue(parseFloat(target.value));
-          }} />
+      <div style={{ marginTop: '1rem' }}>
+        <label style={{ marginRight: '1rem' }}>Controlled</label>
+        <HorizontalRange value={value} onChange={event => setValue(parseFloat(event.target.value))} />
       </div>
 
-      <div>
-        <label>Controlled (no change)</label>
+      <div style={{ marginTop: '1rem' }}>
+        <label style={{ marginRight: '1rem' }}>Controlled (no change)</label>
         <HorizontalRange value={50} />
+      </div>
+
+      <div style={{ marginTop: '1rem' }}>
+        <label style={{ marginRight: '1rem' }}>HTML/native</label>
+        <input type="range" />
       </div>
     </div>
   );

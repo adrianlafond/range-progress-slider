@@ -1,12 +1,8 @@
 import React from 'react';
 import classnames from 'classnames';
 import {
-  getValueMultiple,
-  processSingleProps,
-  processMultipleProps,
+  processProps,
   RangeProps,
-  MultipleRangeProps,
-  InteractiveRangeProps,
   COMPONENT,
 } from '../shared';
 import './horizontal-range.scss';
@@ -16,36 +12,25 @@ type HorizontalRangeProps = RangeProps & React.InputHTMLAttributes<HTMLInputElem
 export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props: HorizontalRangeProps) => {
   const [focussed, setFocussed] = React.useState(false);
 
-  const multiple = getValueMultiple(props.multiple);
-  const singleProps = !multiple ? processSingleProps(props) : null;
-  const multiProps = multiple ? processMultipleProps(props) : null;
-
-  const dataProps = Object.keys(props)
-    .filter(propName => propName.startsWith('data-'))
-    .reduce((obj: { [key: string]: any }, key: string) => {
-      obj[key] = (props as { [key: string]: any })[key];
-      return obj;
-    }, {});;
-  const hostKeys = [...Object.keys(singleProps || multiProps || {}), 'style', 'className'];
-  const otherProps = Object.keys(props)
-    .filter(propName => !propName.startsWith('data-') && hostKeys.indexOf(propName) === -1)
-    .reduce((obj: { [key: string]: any }, key: string) => {
-      obj[key] = (props as { [key: string]: any })[key];
-      return obj;
-    }, {});
+  const { multiple, baseProps, singleProps, multipleProps, dataProps, otherProps } = processProps(props);
 
   const trackRef = React.useRef<HTMLDivElement>(null);
+  const progressRef = React.useRef<HTMLDivElement>(null);
   const knobRef = React.useRef<HTMLDivElement>(null);
+  const knobRef2 = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLInputElement>();
 
+  const isControlled = React.useCallback(() => props.value != null, [props.value]);
+
   const updateSingleKnobPosition = React.useCallback((value: number) => {
-    if (singleProps && trackRef.current && knobRef.current) {
+    if (singleProps && trackRef.current && knobRef.current && progressRef.current) {
       // offsetWidth should be fine for everything, but the style.width number
       // is used to allow for a width in JsDom unit testing.
       const trackWidth = props.style && typeof props.style.width === 'number' ? props.style.width as number : trackRef.current.offsetWidth;
       const knobWidth = knobRef.current.offsetWidth;
       const maxWidth = trackWidth - knobWidth;
       const percent = (value - singleProps.min) / (singleProps.max - singleProps.min);
+      progressRef.current.style.width = `${maxWidth * percent + 1}px`;
       knobRef.current.style.left = `${maxWidth * percent}px`;
     }
   }, [singleProps, props.style]);
@@ -58,14 +43,19 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
     }
   }
 
+  React.useEffect(() => {
+    if (singleProps?.value != null && isControlled()) {
+      inputRef.current!.value = `${singleProps?.value}`;
+      updateSingleKnobPosition(+inputRef.current!.value);
+    }
+  }, [singleProps?.value, updateSingleKnobPosition, isControlled]);
+
   function onInternalChange(event: React.ChangeEvent<HTMLInputElement>) {
     if (props.onChange) {
       props.onChange(event);
     }
     if (singleProps && inputRef.current) {
-      if (isControlled()) {
-        inputRef.current.value = `${singleProps.value}`;
-      }
+      inputRef.current.value = isControlled() ? `${singleProps.value}` : event.target.value;
       updateSingleKnobPosition(+inputRef.current.value);
     }
   }
@@ -84,26 +74,45 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
     }
   }
 
-  function isControlled() {
-    return props.value != null;
-  }
-
   return (
     <div
       {...dataProps}
-      className={classnames('horizontal-range', props.className, {
-        'horizontal-range--focus': focussed,
-      })}
-      style={props.style}
+      className={classnames('horizontal-range', baseProps.className)}
+      style={baseProps.style}
       >
-      <div ref={trackRef} className="horizontal-range__track" data-range-item="track" data-testid={`${COMPONENT}__track`} />
-      {!multiple && <div ref={knobRef} className="horizontal-range__knob" data-range-item="knob" data-testid={`${COMPONENT}__knob`} />}
-      {multiple && <MultipleRange {...multiProps as Required<MultipleRangeProps>} />}
+      <div
+        ref={trackRef}
+        className={classnames('horizontal-range__track', { 'horizontal-range__track--focus': focussed })}
+        data-testid={`${COMPONENT}__track`}
+       >
+        <div
+          ref={progressRef}
+          className={classnames('horizontal-range__track-progress', { 'horizontal-range__track-progress--focus': focussed })}
+          data-testid={`${COMPONENT}__track-progress`}
+        />
+      </div>
+      <div
+        ref={knobRef}
+        className={classnames('horizontal-range__knob', { 'horizontal-range__knob--focus': focussed })}
+        data-range-item="knob"
+        data-testid={`${COMPONENT}__knob`}
+      />
+      {multipleProps && (
+        <>
+          <div
+            ref={knobRef2}
+            className={classnames('horizontal-range__knob', { 'horizontal-range__knob--focus': focussed })}
+            data-testid={`${COMPONENT}__knob2`}
+          />
+          <input type="hidden" value={multipleProps.value[0]} />
+          <input type="hidden" value={multipleProps.value[1]} />
+        </>
+      )}
       <input
         {...otherProps}
-        min={singleProps?.min}
-        max={singleProps?.max}
-        step={singleProps?.step}
+        min={baseProps.min}
+        max={baseProps.max}
+        step={baseProps.step}
         type="range"
         ref={onInputRef}
         className="horizontal-range__input"
@@ -116,9 +125,3 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
   );
 });
 
-const MultipleRange: React.FC<Required<MultipleRangeProps> & InteractiveRangeProps> = () => (
-  <input
-    type="range"
-    className="horizontal-range__input"
-  />
-);
