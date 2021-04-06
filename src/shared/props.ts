@@ -1,6 +1,7 @@
 import React from "react";
 
 export interface BaseRangeProps {
+  name?: string;
   min?: number;
   max?: number;
   step?: number;
@@ -15,6 +16,7 @@ export interface SingleRangeProps extends BaseRangeProps {
 }
 
 export interface MultipleRangeProps extends BaseRangeProps {
+  name2?: string;
   multiple?: true,
   value?: [number, number];
   defaultValue?: [number, number];
@@ -26,6 +28,10 @@ export interface InteractiveRangeProps {
 }
 
 export type RangeProps = (SingleRangeProps | MultipleRangeProps) & InteractiveRangeProps;
+
+export interface RangeMultipleChangeEvent<T = HTMLInputElement> extends React.ChangeEvent<T> {
+  knob: 0 | 1;
+}
 
 export const defaultRangeProps = {
   multiple: false,

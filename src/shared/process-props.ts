@@ -43,6 +43,7 @@ function getValueMultiple(value?: RangeProps['multiple']) {
 function processBaseProps(props: RangeProps): Required<BaseRangeProps & InteractiveRangeProps> {
   const [min, max] = getValidMinMax(props.min, props.max);
   return {
+    name: props.name || '',
     min,
     max,
     step: getNumber(props.step, defaultRangeProps.step),
@@ -57,7 +58,7 @@ function processBaseProps(props: RangeProps): Required<BaseRangeProps & Interact
  * Returns a SingleRangeProps with all props defined.
  */
 function processSingleProps(
-  props: RangeProps = { multiple: false },
+  props: SingleRangeProps = { multiple: false },
   baseProps: Required<BaseRangeProps & InteractiveRangeProps>
  ): Required<SingleRangeProps> {
   const { min, max } = baseProps;
@@ -73,17 +74,22 @@ function processSingleProps(
  * Returns a MultipleRangeProps with all props defined.
  */
 function processMultipleProps(
-  props: RangeProps = { multiple: true },
+  props: MultipleRangeProps = { multiple: true },
   baseProps: Required<BaseRangeProps & InteractiveRangeProps>
  ): Required<MultipleRangeProps> {
   const { min, max } = baseProps;
-  const value = Array.isArray(props.value) ? props.value : [props.value];
-  const defaultValue = Array.isArray(props.defaultValue) ? props.defaultValue : [props.defaultValue];
+  const valueArray = Array.isArray(props.value) ? props.value : [props.value];
+  const defaultValueArray = Array.isArray(props.defaultValue) ? props.defaultValue : [props.defaultValue];
+  const value: MultipleRangeProps['value'] = [getValidValue(valueArray[0], min, max), getValidValue(valueArray[1], min, max)];
+  const defaultValue: MultipleRangeProps['defaultValue'] = [getValidValue(defaultValueArray[0], min, max), getValidValue(defaultValueArray[1], min, max)];
+  value[0] = Math.min(value[0], value[1]);
+  defaultValue[0] = Math.min(defaultValue[0], defaultValue[1]);
   return {
     ...baseProps,
+    name2: props.name2 || '',
     multiple: true,
-    value: [getValidValue(value[0], min, max), getValidValue(value[1], min, max)],
-    defaultValue: [getValidValue(defaultValue[0], min, max), getValidValue(defaultValue[1], min, max)],
+    value,
+    defaultValue,
   }
 }
 

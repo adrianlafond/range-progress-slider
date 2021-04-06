@@ -50,6 +50,15 @@ describe('processProps() >', () => {
     });
   });
 
+  describe('name, name2 >', () => {
+    it('sets name to "" by default', () => {
+      expect(processProps().baseProps.name).toBe('');
+    });
+    it('sets name2 to "" by default if multiple', () => {
+      expect(processProps({ multiple: true}).multipleProps!.name2).toBe('');
+    });
+  });
+
   describe('singleProps value >', () => {
     ['value', 'defaultValue'].forEach(key => {
       it(`sets ${key} by default halfway between min and max`, () => {
@@ -57,6 +66,24 @@ describe('processProps() >', () => {
         expect(processProps({ min: 0, max: 100 }).singleProps![key as valueType]).toBe(50);
         expect(processProps({ min: -100, max: -50 }).singleProps![key as valueType]).toBe(-75);
         expect(processProps({ min: -0.5, max: 1.0 }).singleProps![key as valueType]).toBe(0.25);
+      });
+    });
+  });
+
+  describe('multipleProps value >', () => {
+    type valueType = 'value' | 'defaultValue';
+    ['value', 'defaultValue'].forEach(key => {
+      it(`sets ${key} by default halfway between min and max`, () => {
+        expect(processProps({ multiple: true, min: 0, max: 100 }).multipleProps![key as valueType][0]).toBe(50);
+        expect(processProps({ multiple: true, min: 0, max: 100 }).multipleProps![key as valueType][1]).toBe(50);
+        expect(processProps({ multiple: true, min: -100, max: -50 }).multipleProps![key as valueType][0]).toBe(-75);
+        expect(processProps({ multiple: true, min: -100, max: -50 }).multipleProps![key as valueType][1]).toBe(-75);
+        expect(processProps({ multiple: true, min: -0.5, max: 1.0 }).multipleProps![key as valueType][0]).toBe(0.25);
+        expect(processProps({ multiple: true, min: -0.5, max: 1.0 }).multipleProps![key as valueType][1]).toBe(0.25);
+      });
+      it(`ensures first value is <= second value`, () => {
+        expect(processProps({ multiple: true, [key]: [75, 25] }).multipleProps![key as valueType][0]).toBe(25);
+        expect(processProps({ multiple: true, [key]: [75, 25] }).multipleProps![key as valueType][1]).toBe(25);
       });
     });
   });

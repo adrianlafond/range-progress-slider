@@ -1,14 +1,16 @@
 import React from 'react';
 import './demo.scss';
-import { HorizontalRange, MultipleRangeProps } from '../horizontal-range';
+import { HorizontalRange, MultipleRangeProps, RangeMultipleChangeEvent } from '../horizontal-range';
 
 export const Demo = () => {
   const [value, setValue] = React.useState(25);
 
   const [multiValues, setMultiValues] = React.useState<MultipleRangeProps['value']>([25, 75]);
 
-  function onMultiChange(event: React.ChangeEvent) {
-    console.log(event);
+  function onMultiChange(event: RangeMultipleChangeEvent) {
+    const newValues = multiValues?.slice() || [];
+    newValues[event.knob] = +event.target.value;
+    setMultiValues(newValues as MultipleRangeProps['value']);
   }
 
   return (
@@ -37,7 +39,7 @@ export const Demo = () => {
 
       <div style={{ marginTop: '1rem' }}>
         <label style={{ marginRight: '1rem' }}>Controlled multiple</label>
-        <HorizontalRange value={multiValues} multiple onChange={onMultiChange} />
+        <HorizontalRange value={multiValues} step={5} multiple onChange={onMultiChange} />
       </div>
 
       <div style={{ marginTop: '1rem' }}>
