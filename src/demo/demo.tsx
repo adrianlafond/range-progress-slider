@@ -1,9 +1,15 @@
 import React from 'react';
 import './demo.scss';
-import { HorizontalRange } from '../horizontal-range';
+import { HorizontalRange, MultipleRangeProps } from '../horizontal-range';
 
 export const Demo = () => {
   const [value, setValue] = React.useState(25);
+
+  const [multiValues, setMultiValues] = React.useState<MultipleRangeProps['value']>([25, 75]);
+
+  function onMultiChange(event: React.ChangeEvent) {
+    console.log(event);
+  }
 
   return (
     <div className="demo">
@@ -11,7 +17,7 @@ export const Demo = () => {
 
       <div>
         <label style={{ marginRight: '1rem' }}>Uncontrolled</label>
-        <HorizontalRange data-foo="bar" />
+        <HorizontalRange data-foo="bar" step={5} />
       </div>
 
       <div style={{ marginTop: '1rem' }}>
@@ -22,6 +28,21 @@ export const Demo = () => {
       <div style={{ marginTop: '1rem' }}>
         <label style={{ marginRight: '1rem' }}>Controlled (no change)</label>
         <HorizontalRange value={50} />
+      </div>
+
+      <div style={{ marginTop: '1rem' }}>
+        <label style={{ marginRight: '1rem' }}>Uncontrolled multiple</label>
+        <HorizontalRange data-foo="bar" step={5} multiple />
+      </div>
+
+      <div style={{ marginTop: '1rem' }}>
+        <label style={{ marginRight: '1rem' }}>Controlled multiple</label>
+        <HorizontalRange value={multiValues} multiple onChange={onMultiChange} />
+      </div>
+
+      <div style={{ marginTop: '1rem' }}>
+        <label style={{ marginRight: '1rem' }}>Controlled multiple (no change)</label>
+        <HorizontalRange value={[25, 75]} multiple />
       </div>
 
       <div style={{ marginTop: '1rem' }}>
