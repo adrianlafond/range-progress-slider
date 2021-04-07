@@ -2,36 +2,22 @@ import { processProps } from './process-props';
 import { defaultRangeProps } from './props';
 
 describe('processProps() >', () => {
-  describe('mutliple >', () => {
+  describe('multiple (property) >', () => {
     it('returns false by default for "multiple"', () => {
       expect(processProps().multiple).toBe(false);
-    });
-  });
-
-  describe('singleProps, multipleProps >', () => {
-    it('returns singleProps but not multipleProps if multiple is false', () => {
-      const { singleProps, multipleProps } = processProps();
-      expect(singleProps).toBeDefined();
-      expect(singleProps).not.toBeNull();
-      expect(multipleProps).toBeNull();
-    });
-    it('returns multipleProps but not singleProps if multipe is true', () => {
-      const { singleProps, multipleProps } = processProps({ multiple: true });
-      expect(singleProps).toBeNull();
-      expect(multipleProps).toBeDefined();
-      expect(multipleProps).not.toBeNull();
+      expect(processProps().rangeProps.multiple).toBe(false);
     });
   });
 
   describe('min, max >', () => {
-    describe('singleProps', () => {
+    describe('single', () => {
       it('returns an object with "min" and "max defined to default values if they are not already defined', () => {
-        const { min, max } = processProps().baseProps;
+        const { min, max } = processProps().rangeProps;
         expect(min).toBe(defaultRangeProps.min);
         expect(max).toBe(defaultRangeProps.max);
       });
       it('does not allow min to be greater than max', () => {
-        const { min, max } = processProps({ min: 100, max: 50 }).baseProps;
+        const { min, max } = processProps({ min: 100, max: 50 }).rangeProps;
         expect(min).toBe(50);
         expect(max).toBe(50);
       });
@@ -40,50 +26,56 @@ describe('processProps() >', () => {
 
   describe('step, disabled, readOnly >', () => {
     it(`sets "step" to ${defaultRangeProps.step} by default`, () => {
-      expect(processProps().baseProps.step).toBe(defaultRangeProps.step);
+      expect(processProps().rangeProps.step).toBe(defaultRangeProps.step);
     });
     it(`sets "disabled" to ${defaultRangeProps.disabled} by default`, () => {
-      expect(processProps().baseProps.disabled).toBe(defaultRangeProps.disabled);
+      expect(processProps().rangeProps.disabled).toBe(defaultRangeProps.disabled);
     });
     it(`sets "readOnly" to ${defaultRangeProps.readOnly} by default`, () => {
-      expect(processProps().baseProps.readOnly).toBe(defaultRangeProps.readOnly);
+      expect(processProps().rangeProps.readOnly).toBe(defaultRangeProps.readOnly);
     });
   });
 
   describe('name, name2 >', () => {
     it('sets name to "" by default', () => {
-      expect(processProps().baseProps.name).toBe('');
+      expect(processProps().rangeProps.name).toBe('');
     });
     it('sets name2 to "" by default if multiple', () => {
-      expect(processProps({ multiple: true}).multipleProps!.name2).toBe('');
+      expect(processProps({ multiple: true }).rangeProps.name2).toBe('');
     });
   });
 
-  describe('singleProps value >', () => {
+  describe('single value >', () => {
     ['value', 'defaultValue'].forEach(key => {
       it(`sets ${key} by default halfway between min and max`, () => {
         type valueType = 'value' | 'defaultValue';
-        expect(processProps({ min: 0, max: 100 }).singleProps![key as valueType]).toBe(50);
-        expect(processProps({ min: -100, max: -50 }).singleProps![key as valueType]).toBe(-75);
-        expect(processProps({ min: -0.5, max: 1.0 }).singleProps![key as valueType]).toBe(0.25);
+        expect(processProps({ min: 0, max: 100 }).rangeProps[key as valueType][0]).toBe(50);
+        expect(processProps({ min: -100, max: -50 }).rangeProps[key as valueType][0]).toBe(-75);
+        expect(processProps({ min: -0.5, max: 1.0 }).rangeProps[key as valueType][0]).toBe(0.25);
       });
     });
   });
 
-  describe('multipleProps value >', () => {
+  describe('multiple value >', () => {
     type valueType = 'value' | 'defaultValue';
     ['value', 'defaultValue'].forEach(key => {
       it(`sets ${key} by default halfway between min and max`, () => {
-        expect(processProps({ multiple: true, min: 0, max: 100 }).multipleProps![key as valueType][0]).toBe(50);
-        expect(processProps({ multiple: true, min: 0, max: 100 }).multipleProps![key as valueType][1]).toBe(50);
-        expect(processProps({ multiple: true, min: -100, max: -50 }).multipleProps![key as valueType][0]).toBe(-75);
-        expect(processProps({ multiple: true, min: -100, max: -50 }).multipleProps![key as valueType][1]).toBe(-75);
-        expect(processProps({ multiple: true, min: -0.5, max: 1.0 }).multipleProps![key as valueType][0]).toBe(0.25);
-        expect(processProps({ multiple: true, min: -0.5, max: 1.0 }).multipleProps![key as valueType][1]).toBe(0.25);
+        expect(processProps({ multiple: true, min: 0, max: 100 }).rangeProps[key as valueType][0]).toBe(50);
+        expect(processProps({ multiple: true, min: 0, max: 100 }).rangeProps[key as valueType][1]).toBe(50);
+        expect(processProps({ multiple: true, min: -100, max: -50 }).rangeProps[key as valueType][0]).toBe(-75);
+        expect(processProps({ multiple: true, min: -100, max: -50 }).rangeProps[key as valueType][1]).toBe(-75);
+        expect(processProps({ multiple: true, min: -0.5, max: 1.0 }).rangeProps[key as valueType][0]).toBe(0.25);
+        expect(processProps({ multiple: true, min: -0.5, max: 1.0 }).rangeProps[key as valueType][1]).toBe(0.25);
       });
-      it(`ensures first value is <= second value`, () => {
-        expect(processProps({ multiple: true, [key]: [75, 25] }).multipleProps![key as valueType][0]).toBe(25);
-        expect(processProps({ multiple: true, [key]: [75, 25] }).multipleProps![key as valueType][1]).toBe(25);
+      it(`ensures second value value is >= first value when the first knob is the focussed knob`, () => {
+        const result = processProps({ multiple: true, [key]: [75, 25] }, 0);
+        expect(result.rangeProps[key as valueType][0]).toBe(75);
+        expect(result.rangeProps[key as valueType][1]).toBe(75);
+      });
+      it(`ensures first value is <= second value when the second knob is the focussed knob`, () => {
+        const result = processProps({ multiple: true, [key]: [75, 25] }, 1);
+        expect(result.rangeProps[key as valueType][0]).toBe(25);
+        expect(result.rangeProps[key as valueType][1]).toBe(25);
       });
     });
   });

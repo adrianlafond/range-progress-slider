@@ -45,7 +45,7 @@ function getBaseProps(props: RangeProps): Required<BaseRangeProps & InteractiveR
 }
 
 function getRangeProps(
-  props: MultipleRangeProps = { multiple: true },
+  props: MultipleRangeProps,
   baseProps: Required<BaseRangeProps & InteractiveRangeProps>,
   focussedKnob: 0 | 1
 ): Required<MultipleRangeProps & InteractiveRangeProps> {
