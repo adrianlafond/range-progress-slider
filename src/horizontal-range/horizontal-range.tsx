@@ -103,16 +103,22 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
     }
   }
 
+  function onInternalMouseDown(event: React.MouseEvent<HTMLInputElement>) {
+    if (trackRef.current && knobRef.current && knobRef2.current) {
+      const trackRect = trackRef.current.getBoundingClientRect();
+      const clientX = event.clientX - trackRect.left;
+      const delta1 = Math.abs(clientX - knobRef.current.offsetLeft);
+      const delta2 = Math.abs(clientX - knobRef2.current.offsetLeft);
+      const nextFocussedKnob = delta1 < delta2 ? 0 : 1;
+      updateInput(nextFocussedKnob === 0 ? +multipleInputRef2.current!.value : +multipleInputRef1.current!.value);
+      setFocussedKnob(nextFocussedKnob);
+    }
+  }
+
   function onInternalKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (multiple && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
       event.preventDefault();
-      if (focussedKnob === 0) {
-        updateInput(+multipleInputRef2.current!.value);
-        // updateMultipleKnobPositions(+multipleInputRef2.current!.value, 1);
-      } else {
-        updateInput(+multipleInputRef1.current!.value);
-        // updateMultipleKnobPositions(+multipleInputRef1.current!.value, 0);
-      }
+      updateInput(focussedKnob === 0 ? +multipleInputRef2.current!.value : +multipleInputRef1.current!.value);
       setFocussedKnob(focussedKnob === 0 ? 1 : 0);
     }
     if (props.onKeyDown) {
@@ -225,6 +231,7 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
         onChange={onInternalChange}
         onFocus={onInternalFocus}
         onBlur={onInternalBlur}
+        onMouseDown={multiple ? onInternalMouseDown : undefined}
         onKeyDown={onInternalKeyDown}
         data-testid={`${COMPONENT}__input`}
       />
