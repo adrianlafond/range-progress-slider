@@ -38,7 +38,6 @@ function getBaseProps(props: RangeProps): Required<BaseRangeProps> {
     max,
     step: getNumber(props.step, defaultRangeProps.step),
     disabled: getValidBoolean(props.disabled, defaultRangeProps.disabled),
-    readOnly: getValidBoolean(props.readOnly, defaultRangeProps.readOnly),
     style: props.style || {},
     className: props.className || '',
   };

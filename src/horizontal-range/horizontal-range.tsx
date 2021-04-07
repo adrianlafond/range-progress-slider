@@ -12,7 +12,7 @@ import './horizontal-range.scss';
 
 export type { SingleRangeProps, MultipleRangeProps, RangeMultipleChangeEvent } from '../shared';
 
-export type HorizontalRangeProps = RangeProps & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'>;
+export type HorizontalRangeProps = RangeProps;
 
 export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props: HorizontalRangeProps) => {
   const [focussed, setFocussed] = React.useState(false);
@@ -196,6 +196,7 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
           className={classnames(
             'horizontal-range__track-progress', {
               'horizontal-range__track-progress--focus': focussed,
+              'horizontal-range__track-progress--disabled': rangeProps.disabled,
             }
           )}
           data-testid={`${COMPONENT}__track-progress`}
@@ -206,6 +207,7 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
         className={classnames(
           'horizontal-range__knob', {
             'horizontal-range__knob--focus': focussed && (!multiple || (multiple && focussedKnob === 0)),
+            'horizontal-range__knob--disabled': rangeProps.disabled,
           }
         )}
         data-range-item="knob"
@@ -215,7 +217,12 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
         <>
           <div
             ref={knobRef2}
-            className={classnames('horizontal-range__knob', { 'horizontal-range__knob--focus': focussed && focussedKnob === 1 })}
+            className={classnames(
+              'horizontal-range__knob', {
+                'horizontal-range__knob--focus': focussed && (!multiple || (multiple && focussedKnob === 0)),
+                'horizontal-range__knob--disabled': rangeProps.disabled,
+              }
+            )}
             data-testid={`${COMPONENT}__knob2`}
           />
           <input type="hidden" name={rangeProps.name || undefined} ref={multipleInputRef1} />
@@ -228,6 +235,7 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
         min={rangeProps.min}
         max={rangeProps.max}
         step={rangeProps.step}
+        disabled={rangeProps.disabled}
         type="range"
         ref={onInputRef}
         className="horizontal-range__input"

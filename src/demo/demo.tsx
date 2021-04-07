@@ -18,7 +18,7 @@ export const Demo = () => {
 
       <div>
         <label style={{ marginRight: '1rem' }}>Uncontrolled</label>
-        <HorizontalRange data-foo="bar" step={5} />
+        <HorizontalRange data-foo="bar" step={5} defaultValue={25} />
       </div>
 
       <div style={{ marginTop: '1rem' }}>
@@ -33,7 +33,7 @@ export const Demo = () => {
 
       <div style={{ marginTop: '1rem' }}>
         <label style={{ marginRight: '1rem' }}>Uncontrolled multiple</label>
-        <HorizontalRange data-foo="bar" step={5} multiple />
+        <HorizontalRange data-foo="bar" step={5} defaultValue={[25, 75]} multiple />
       </div>
 
       <div style={{ marginTop: '1rem' }}>

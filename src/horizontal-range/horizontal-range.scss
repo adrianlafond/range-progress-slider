@@ -29,6 +29,9 @@
       border-color: blue;
       background-color: lightblue;
     }
+    &--disabled {
+      border-color: #ccc;
+    }
   }
 
   &__track {
@@ -54,6 +57,9 @@
 
       &--focus {
         background-color: blue;
+      }
+      &--disabled {
+        background-color: #ccc;
       }
     }
   }

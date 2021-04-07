@@ -7,7 +7,6 @@ export interface BaseRangeProps {
   max?: number;
   step?: number;
   disabled?: boolean;
-  readOnly?: boolean;
   style?: React.CSSProperties;
   className?: string;
 }
@@ -33,7 +32,7 @@ export interface MultipleRangeProps extends BaseRangeProps {
   onChange?: (event: RangeMultipleChangeEvent<HTMLInputElement>) => void;
 }
 
-export type RangeProps = SingleRangeProps | MultipleRangeProps;
+export type RangeProps = (SingleRangeProps | MultipleRangeProps) & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'defaultValue' | 'onChange'>;
 
 export interface RangeMultipleChangeEvent<T = HTMLInputElement> extends React.ChangeEvent<T> {
   knob: 0 | 1;
@@ -48,6 +47,5 @@ export const defaultRangeProps = {
   max: 100,
   step: 1,
   disabled: false,
-  readOnly: false,
   onChange: () => undefined,
 };
