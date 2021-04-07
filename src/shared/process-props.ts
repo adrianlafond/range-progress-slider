@@ -1,4 +1,4 @@
-import { BaseRangeProps, RangeProps, defaultRangeProps, SingleRangeProps, MultipleRangeProps } from './props';
+import { BaseRangeProps, RangeProps, defaultRangeProps, MultipleRangeProps } from './props';
 
 interface ProcessedProps {
   multiple: boolean;
@@ -58,26 +58,37 @@ function getRangeProps(
     const multipleRangeProps: MultipleRangeProps = { ...rangeProps, multiple: true };
     const valueArray = Array.isArray(props.value) ? props.value : [props.value];
     const defaultValueArray = Array.isArray(props.defaultValue) ? props.defaultValue : [props.defaultValue];
-    const value: MultipleRangeProps['value'] = [getValidValue(valueArray[0], min, max), getValidValue(valueArray[1], min, max)];
-    const defaultValue: MultipleRangeProps['defaultValue'] = [getValidValue(defaultValueArray[0], min, max), getValidValue(defaultValueArray[1], min, max)];
+    const multipleDefaultValue: MultipleRangeProps['defaultValue'] = [
+      getValidValue(defaultValueArray[0], min, max),
+      getValidValue(defaultValueArray[1], min, max),
+    ];
+    const multipleValue: MultipleRangeProps['value'] = props.value === undefined && props.defaultValue != null
+      ? multipleDefaultValue
+      : [getValidValue(valueArray[0], min, max), getValidValue(valueArray[1], min, max)];
+
+
     if (focussedKnob === 0) {
-      value[1] = Math.max(value[0], value[1]);
-      defaultValue[1] = Math.max(defaultValue[0], defaultValue[1]);
+      multipleValue[1] = Math.max(multipleValue[0], multipleValue[1]);
+      multipleDefaultValue[1] = Math.max(multipleDefaultValue[0], multipleDefaultValue[1]);
     } else {
-      value[0] = Math.min(value[0], value[1]);
-      defaultValue[0] = Math.min(defaultValue[0], defaultValue[1]);
+      multipleValue[0] = Math.min(multipleValue[0], multipleValue[1]);
+      multipleDefaultValue[0] = Math.min(multipleDefaultValue[0], multipleDefaultValue[1]);
     }
-    multipleRangeProps.value = value;
-    multipleRangeProps.defaultValue = defaultValue;
+    multipleRangeProps.value = multipleValue;
+    multipleRangeProps.defaultValue = multipleDefaultValue;
     multipleRangeProps.name2 = props.name2 || '';
     multipleRangeProps.multiple = true;
     return multipleRangeProps as Required<RangeProps>;
   }
+  const singleDefaultValue = getValidValue(props.defaultValue, min, max);
+  const singleValue = props.value === undefined && props.defaultValue != null
+    ? singleDefaultValue
+    : getValidValue(props.value, min, max);
   return {
     ...rangeProps,
     multiple: false,
-    value: getValidValue(props.value, min, max),
-    defaultValue: getValidValue(props.defaultValue, min, max),
+    value: singleValue,
+    defaultValue: singleDefaultValue,
   } as Required<RangeProps>;
 }
 
