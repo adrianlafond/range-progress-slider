@@ -5,8 +5,6 @@ import {
   RangeProps,
   RangeMultipleChangeEvent,
   COMPONENT,
-  // MultipleRangeProps,
-  // SingleRangeProps,
 } from '../shared';
 import './horizontal-range.scss';
 
