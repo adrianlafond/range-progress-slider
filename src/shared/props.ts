@@ -2,31 +2,38 @@ import React from "react";
 
 export interface BaseRangeProps {
   name?: string;
-  multiple?: boolean;
+  // multiple?: boolean;
   min?: number;
   max?: number;
   step?: number;
   disabled?: boolean;
   readOnly?: boolean;
+  style?: React.CSSProperties;
+  className?: string;
 }
 
 export interface SingleRangeProps extends BaseRangeProps {
   value?: number;
   defaultValue?: number;
+
+  multiple?: false;
+  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export interface MultipleRangeProps extends BaseRangeProps {
+  /**
+   * When "multiple" is true, "name2" will be applied as the "name" attribute to
+   * the input that stores the second knob's value. Useful for form submission.
+   */
   name2?: string;
   value?: [number, number];
   defaultValue?: [number, number];
+
+  multiple?: true;
+  onChange?: (event: RangeMultipleChangeEvent<HTMLInputElement>) => void;
 }
 
-export interface InteractiveRangeProps {
-  style?: React.CSSProperties;
-  className?: string;
-}
-
-export type RangeProps = (SingleRangeProps | MultipleRangeProps) & InteractiveRangeProps;
+export type RangeProps = SingleRangeProps | MultipleRangeProps;
 
 export interface RangeMultipleChangeEvent<T = HTMLInputElement> extends React.ChangeEvent<T> {
   knob: 0 | 1;
@@ -42,4 +49,5 @@ export const defaultRangeProps = {
   step: 1,
   disabled: false,
   readOnly: false,
+  onChange: () => undefined,
 };

@@ -7,7 +7,7 @@ export const Demo = () => {
 
   const [multiValues, setMultiValues] = React.useState<MultipleRangeProps['value']>([25, 75]);
 
-  function onMultiChange(event: RangeMultipleChangeEvent) {
+  function onMultiChange(event: RangeMultipleChangeEvent<HTMLInputElement>) {
     const newValues = [...event.value];
     setMultiValues(newValues as MultipleRangeProps['value']);
   }
@@ -23,7 +23,7 @@ export const Demo = () => {
 
       <div style={{ marginTop: '1rem' }}>
         <label style={{ marginRight: '1rem' }}>Controlled</label>
-        <HorizontalRange value={value} step={5} onChange={event => setValue(+event.target.value)} />
+        <HorizontalRange value={value} step={5} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setValue(+event.target.value)} />
       </div>
 
       <div style={{ marginTop: '1rem' }}>

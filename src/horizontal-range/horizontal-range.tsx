@@ -3,19 +3,24 @@ import classnames from 'classnames';
 import {
   processProps,
   RangeProps,
+  MultipleRangeProps,
   RangeMultipleChangeEvent,
   COMPONENT,
+  SingleRangeProps,
 } from '../shared';
 import './horizontal-range.scss';
 
 export type { SingleRangeProps, MultipleRangeProps, RangeMultipleChangeEvent } from '../shared';
-export type HorizontalRangeProps = RangeProps & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value'>;
+
+export type HorizontalRangeProps = RangeProps & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'>;
 
 export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props: HorizontalRangeProps) => {
   const [focussed, setFocussed] = React.useState(false);
   const [focussedKnob, setFocussedKnob] = React.useState<0 | 1>(0);
 
   const { multiple, rangeProps, dataProps, otherProps } = processProps(props, focussedKnob);
+  const singleRangeProps: Required<SingleRangeProps> | null = multiple ? null : rangeProps as Required<SingleRangeProps>;
+  const multipleRangeProps: Required<MultipleRangeProps> | null = multiple ? rangeProps as Required<MultipleRangeProps> : null;
 
   const trackRef = React.useRef<HTMLDivElement>(null);
   const progressRef = React.useRef<HTMLDivElement>(null);
@@ -63,16 +68,16 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
   function onInternalChange(event: React.ChangeEvent<HTMLInputElement>) {
     const targetValue = event.target.value;
 
-    if (props.onChange) {
-      if (multiple) {
-        const multipleEvent = event as RangeMultipleChangeEvent;
-        multipleEvent.knob = focussedKnob;
-        multipleEvent.value = [
-          focussedKnob === 0 ? +targetValue : +(multipleInputRef1.current?.value || 0),
-          focussedKnob === 1 ? +targetValue : +(multipleInputRef2.current?.value || 0),
-        ];
-      }
-      props.onChange(event);
+    if (singleRangeProps) {
+      singleRangeProps.onChange(event);
+    } else if (multipleRangeProps) {
+      const multipleEvent = event as RangeMultipleChangeEvent;
+      multipleEvent.knob = focussedKnob;
+      multipleEvent.value = [
+        focussedKnob === 0 ? +targetValue : +(multipleInputRef1.current?.value || 0),
+        focussedKnob === 1 ? +targetValue : +(multipleInputRef2.current?.value || 0),
+      ];
+      multipleRangeProps.onChange(multipleEvent);
     }
 
     if (multiple) {
@@ -127,18 +132,18 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
   function onInputRef(el: HTMLInputElement) {
     if (!inputRef.current) {
       inputRef.current = el;
-      if (multiple) {
-        updateInput(rangeProps.value[focussedKnob]);
+      if (multipleRangeProps) {
+        updateInput((rangeProps as MultipleRangeProps).value![focussedKnob]);
         if (multipleInputRef1.current) {
-          multipleInputRef1.current.value = `${rangeProps.value[0]}`;
+          multipleInputRef1.current.value = `${multipleRangeProps.value[0]}`;
         }
         if (multipleInputRef2.current) {
-          multipleInputRef2.current.value = `${rangeProps.value[1]}`;
+          multipleInputRef2.current.value = `${multipleRangeProps.value[1]}`;
         }
-        updateMultipleKnobPositions(rangeProps.value[focussedKnob]);
-      } else {
-        updateInput(rangeProps.value[0]);
-        updateSingleKnobPosition(rangeProps.value[0]);
+        updateMultipleKnobPositions(multipleRangeProps.value[focussedKnob]);
+      } else if (singleRangeProps) {
+        updateInput(singleRangeProps.value);
+        updateSingleKnobPosition(singleRangeProps.value);
       }
     }
   }
@@ -152,13 +157,13 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
   function syncInputs() {
     if (inputRef.current) {
       const targetValue = inputRef.current.value;
-      if (multiple) {
-        updateInput(isControlled() ? rangeProps.value[focussedKnob] : +targetValue);
+      if (multipleRangeProps) {
+        updateInput(isControlled() ? multipleRangeProps.value[focussedKnob] : +targetValue);
         updateMultipleInputs();
-        updateMultipleKnobPositions(isControlled() ? rangeProps.value[focussedKnob] : +targetValue);
-      } else {
-        updateInput(isControlled() ? rangeProps.value[0] : +targetValue);
-        updateSingleKnobPosition(isControlled() ? rangeProps.value[0] : +targetValue);
+        updateMultipleKnobPositions(isControlled() ? multipleRangeProps.value[focussedKnob] : +targetValue);
+      } else if (singleRangeProps) {
+        updateInput(isControlled() ? singleRangeProps.value : +targetValue);
+        updateSingleKnobPosition(isControlled() ? singleRangeProps.value : +targetValue);
       }
     }
   }
@@ -214,7 +219,7 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
             data-testid={`${COMPONENT}__knob2`}
           />
           <input type="hidden" name={rangeProps.name || undefined} ref={multipleInputRef1} />
-          <input type="hidden" name={rangeProps.name2 || undefined} ref={multipleInputRef2} />
+          <input type="hidden" name={(rangeProps as MultipleRangeProps).name2 || undefined} ref={multipleInputRef2} />
         </>
       )}
       <input
