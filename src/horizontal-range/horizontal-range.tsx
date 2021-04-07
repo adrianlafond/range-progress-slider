@@ -43,7 +43,7 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
   }, [rangeProps, props.style]);
 
   const updateMultipleKnobPositions = React.useCallback((value: number, paramFocussedKnob = focussedKnob) => {
-    if (rangeProps && knobRef.current && knobRef2.current && multipleInputRef1.current && multipleInputRef2.current) {
+    if (rangeProps && knobRef.current && knobRef2.current && multipleInputRef1.current && multipleInputRef2.current && progressRef.current) {
       const trackWidth = trackRef.current?.offsetWidth || 0;
       const knob1Width = knobRef.current.offsetWidth;
       const knob2Width = knobRef2.current.offsetWidth;
@@ -56,6 +56,9 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
       const perc2 = (+multipleInputRef2.current.value - rangeProps.min) / (rangeProps.max - rangeProps.min);
       const px2 = maxWidth * perc2 + knob1Width;
       knobRef2.current.style.left = `${px2}px`;
+
+      progressRef.current.style.left = `${px1 + knob1Width - 1}px`
+      progressRef.current.style.width = `${px2 - px1 - knob1Width + 2}px`;
     }
   }, [rangeProps, focussedKnob]);
 
@@ -75,19 +78,12 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
     }
 
     if (multiple) {
-      if (isControlled()) {
-        // updateInput(rangeProps.value[focussedKnob]);
-
-      } else {
-        // syncInputs();
-        // updateMultipleKnobPositions(+targetValue);
+      if (!isControlled()) {
         updateMultipleInputs();
         updateMultipleKnobPositions(+targetValue);
       }
     } else {
-      if (isControlled()) {
-        updateInput(rangeProps.value[0]);
-      } else {
+      if (!isControlled()) {
         updateSingleKnobPosition(+targetValue);
       }
     }
