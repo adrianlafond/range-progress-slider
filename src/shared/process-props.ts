@@ -1,10 +1,8 @@
-import { BaseRangeProps, RangeProps, defaultRangeProps, SingleRangeProps, MultipleRangeProps, InteractiveRangeProps } from './props';
+import { BaseRangeProps, RangeProps, defaultRangeProps, MultipleRangeProps, InteractiveRangeProps } from './props';
 
 interface ProcessedProps {
   multiple: boolean;
-  baseProps: Required<BaseRangeProps & InteractiveRangeProps>;
-  singleProps: Required<SingleRangeProps> | null;
-  multipleProps: Required<MultipleRangeProps> | null;
+  rangeProps: Required<MultipleRangeProps & InteractiveRangeProps>;
   dataProps: { [key: string]: string };
   otherProps: { [key: string]: any };
 }
@@ -13,37 +11,29 @@ interface ProcessedProps {
  * Takes raw props where virtually all properties are optional and returns an
  * object ready for use by a component with default values supplied.
  */
-export function processProps(props: { [key: string]: any } = {}): ProcessedProps {
+export function processProps(props: { [key: string]: any } = {}, focussedKnob: 0 | 1 = 0): ProcessedProps {
   const multiple = getValueMultiple(props.multiple);
-  const baseProps = processBaseProps(props);
-  const singleProps = !multiple ? processSingleProps(props, baseProps) : null;
-  const multipleProps = multiple ? processMultipleProps(props, baseProps) : null;
+  const baseProps = getBaseProps(props);
+  const rangeProps = getRangeProps(props, baseProps, focussedKnob);
   const dataProps = getDataProps(props);
-  const otherProps = getOtherProps(props, singleProps || multipleProps || {});
+  const otherProps = getOtherProps(props, rangeProps);
   return {
     multiple,
-    baseProps,
-    singleProps,
-    multipleProps,
+    rangeProps,
     dataProps,
     otherProps,
   };
 }
 
-/**
- * Returns a valid value for the "multiple" property.
- */
 function getValueMultiple(value?: RangeProps['multiple']) {
   return getValidBoolean(value, defaultRangeProps.multiple);
 }
 
-/**
- *
- */
-function processBaseProps(props: RangeProps): Required<BaseRangeProps & InteractiveRangeProps> {
+function getBaseProps(props: RangeProps): Required<BaseRangeProps & InteractiveRangeProps> {
   const [min, max] = getValidMinMax(props.min, props.max);
   return {
     name: props.name || '',
+    multiple: getValidBoolean(props.multiple, defaultRangeProps.multiple),
     min,
     max,
     step: getNumber(props.step, defaultRangeProps.step),
@@ -54,40 +44,26 @@ function processBaseProps(props: RangeProps): Required<BaseRangeProps & Interact
   };
 }
 
-/**
- * Returns a SingleRangeProps with all props defined.
- */
-function processSingleProps(
-  props: SingleRangeProps = { multiple: false },
-  baseProps: Required<BaseRangeProps & InteractiveRangeProps>
- ): Required<SingleRangeProps> {
-  const { min, max } = baseProps;
-  return {
-    ...baseProps,
-    multiple: false,
-    value: getValidValue(props.value, min, max),
-    defaultValue: getValidValue(props.defaultValue, min, max)
-  }
-}
-
-/**
- * Returns a MultipleRangeProps with all props defined.
- */
-function processMultipleProps(
+function getRangeProps(
   props: MultipleRangeProps = { multiple: true },
-  baseProps: Required<BaseRangeProps & InteractiveRangeProps>
- ): Required<MultipleRangeProps> {
+  baseProps: Required<BaseRangeProps & InteractiveRangeProps>,
+  focussedKnob: 0 | 1
+): Required<MultipleRangeProps & InteractiveRangeProps> {
   const { min, max } = baseProps;
   const valueArray = Array.isArray(props.value) ? props.value : [props.value];
   const defaultValueArray = Array.isArray(props.defaultValue) ? props.defaultValue : [props.defaultValue];
   const value: MultipleRangeProps['value'] = [getValidValue(valueArray[0], min, max), getValidValue(valueArray[1], min, max)];
   const defaultValue: MultipleRangeProps['defaultValue'] = [getValidValue(defaultValueArray[0], min, max), getValidValue(defaultValueArray[1], min, max)];
-  value[0] = Math.min(value[0], value[1]);
-  defaultValue[0] = Math.min(defaultValue[0], defaultValue[1]);
+  if (focussedKnob === 0) {
+    value[1] = Math.max(value[0], value[1]);
+    defaultValue[1] = Math.max(defaultValue[0], defaultValue[1]);
+  } else {
+    value[0] = Math.min(value[0], value[1]);
+    defaultValue[0] = Math.min(defaultValue[0], defaultValue[1]);
+  }
   return {
     ...baseProps,
     name2: props.name2 || '',
-    multiple: true,
     value,
     defaultValue,
   }

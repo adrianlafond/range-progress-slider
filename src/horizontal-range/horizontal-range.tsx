@@ -5,108 +5,91 @@ import {
   RangeProps,
   RangeMultipleChangeEvent,
   COMPONENT,
+  // MultipleRangeProps,
+  // SingleRangeProps,
 } from '../shared';
 import './horizontal-range.scss';
-
 
 export type { SingleRangeProps, MultipleRangeProps, RangeMultipleChangeEvent } from '../shared';
 export type HorizontalRangeProps = RangeProps & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value'>;
 
 export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props: HorizontalRangeProps) => {
-  const [focussedKnob, setFocussedKnob] = React.useState<0 | 1>(0);
   const [focussed, setFocussed] = React.useState(false);
-  const { multiple, baseProps, singleProps, multipleProps, dataProps, otherProps } = processProps(props);
+  const [focussedKnob, setFocussedKnob] = React.useState<0 | 1>(0);
+
+  const { multiple, rangeProps, dataProps, otherProps } = processProps(props, focussedKnob);
 
   const trackRef = React.useRef<HTMLDivElement>(null);
   const progressRef = React.useRef<HTMLDivElement>(null);
   const knobRef = React.useRef<HTMLDivElement>(null);
   const knobRef2 = React.useRef<HTMLDivElement>(null);
-  const multiInputRef1 = React.useRef<HTMLInputElement>(null);
-  const multiInputRef2= React.useRef<HTMLInputElement>(null);
+  const multipleInputRef1 = React.useRef<HTMLInputElement>(null);
+  const multipleInputRef2= React.useRef<HTMLInputElement>(null);
   const inputRef = React.useRef<HTMLInputElement>();
 
   const isControlled = React.useCallback(() => props.value != null, [props.value]);
 
   const updateSingleKnobPosition = React.useCallback((value: number) => {
-    if (baseProps && trackRef.current && knobRef.current && progressRef.current) {
+    if (rangeProps && trackRef.current && knobRef.current && progressRef.current) {
       // offsetWidth should be fine for everything, but the style.width number
       // is used to allow for a width in JsDom unit testing.
       const trackWidth = props.style && typeof props.style.width === 'number' ? props.style.width as number : trackRef.current.offsetWidth;
       const knobWidth = knobRef.current.offsetWidth;
       const maxWidth = Math.max(0, trackWidth - knobWidth);
-      const percent = (value - baseProps.min) / (baseProps.max - baseProps.min);
+      const percent = (value - rangeProps.min) / (rangeProps.max - rangeProps.min);
       knobRef.current.style.left = `${maxWidth * percent}px`;
       progressRef.current.style.width = `${maxWidth * percent + 1}px`;
     }
-  }, [baseProps, props.style]);
+  }, [rangeProps, props.style]);
 
-  const updateMultipleKnobPositions = React.useCallback((value: number) => {
-    if (baseProps && knobRef.current && knobRef2.current && multiInputRef1.current && multiInputRef2.current) {
+  const updateMultipleKnobPositions = React.useCallback((value: number, paramFocussedKnob = focussedKnob) => {
+    if (rangeProps && knobRef.current && knobRef2.current && multipleInputRef1.current && multipleInputRef2.current) {
       const trackWidth = trackRef.current?.offsetWidth || 0;
       const knob1Width = knobRef.current.offsetWidth;
       const knob2Width = knobRef2.current.offsetWidth;
       const maxWidth = Math.max(0, trackWidth - knob1Width - knob2Width);
-      const percent = (value - baseProps.min) / (baseProps.max - baseProps.min);
-      const px = maxWidth * percent + knob1Width;
 
-      if (focussedKnob === 0) {
-        knobRef.current.style.left = `${px - knob1Width}px`;
-        const percent2 = (Math.max(value, +multiInputRef2.current.value) - baseProps.min) / (baseProps.max - baseProps.min);
-        const px2 = maxWidth * percent2 + knob1Width;
-        knobRef2.current.style.left = `${px2}px`;
+      const perc1 = (+multipleInputRef1.current.value - rangeProps.min) / (rangeProps.max - rangeProps.min);
+      const px1 = maxWidth * perc1;
+      knobRef.current.style.left = `${px1}px`;
 
-      } else {
-        knobRef2.current.style.left = `${px}px`;
-        const percent1 = (Math.min(value, +multiInputRef1.current.value) - baseProps.min) / (baseProps.max - baseProps.min);
-        const px1 = maxWidth * percent1;
-        knobRef.current.style.left = `${px1}px`;
-      }
+      const perc2 = (+multipleInputRef2.current.value - rangeProps.min) / (rangeProps.max - rangeProps.min);
+      const px2 = maxWidth * perc2 + knob1Width;
+      knobRef2.current.style.left = `${px2}px`;
     }
-  }, [baseProps, focussedKnob]);
-
-  React.useEffect(() => {
-    if (singleProps?.value != null && isControlled()) {
-      inputRef.current!.value = `${singleProps?.value}`;
-      updateSingleKnobPosition(+inputRef.current!.value);
-    }
-  }, [singleProps?.value, updateSingleKnobPosition, isControlled]);
+  }, [rangeProps, focussedKnob]);
 
   function onInternalChange(event: React.ChangeEvent<HTMLInputElement>) {
     const targetValue = event.target.value;
 
-    if (multiple) {
-      if (focussedKnob === 0) {
-        multiInputRef1.current!.value = targetValue;
-        multiInputRef2.current!.value = `${Math.max(+multiInputRef2.current!.value, +targetValue)}`;
-      } else  {
-        multiInputRef1.current!.value = `${Math.min(+multiInputRef1.current!.value, +targetValue)}`;
-        multiInputRef2.current!.value = targetValue;
-      }
-      // event.target = focussedKnob === 0 ? multiInputRef1.current! : multiInputRef2.current!;
-      (event as RangeMultipleChangeEvent).knob = focussedKnob;
-    }
-
     if (props.onChange) {
+      if (multiple) {
+        const multipleEvent = event as RangeMultipleChangeEvent;
+        multipleEvent.knob = focussedKnob;
+        multipleEvent.value = [
+          focussedKnob === 0 ? +targetValue : +(multipleInputRef1.current?.value || 0),
+          focussedKnob === 1 ? +targetValue : +(multipleInputRef2.current?.value || 0),
+        ];
+      }
       props.onChange(event);
     }
 
-    if (singleProps) {
-      inputRef.current!.value = isControlled() ? `${singleProps.value}` : targetValue;
-      updateSingleKnobPosition(+inputRef.current!.value);
+    if (multiple) {
+      if (isControlled()) {
+        // updateInput(rangeProps.value[focussedKnob]);
 
-    } else if (multipleProps) {
-      const newValues = [
-        isControlled()
-          ? multipleProps.value[0]
-          : (focussedKnob === 0 ? +targetValue : Math.min(+targetValue, +multiInputRef1.current!.value)),
-        isControlled()
-          ? multipleProps.value[1]
-          : (focussedKnob === 1 ? +targetValue : Math.max(+targetValue, +multiInputRef2.current!.value))
-      ];
-      multiInputRef1.current!.value = `${newValues[0]}`;
-      multiInputRef2.current!.value = `${newValues[1]}`;
-      inputRef.current!.value = `${newValues[focussedKnob]}`;
-      updateMultipleKnobPositions(newValues[focussedKnob]);
+      } else {
+        // syncInputs();
+        // updateMultipleKnobPositions(+targetValue);
+        updateMultipleInputs();
+        updateMultipleKnobPositions(+targetValue);
+      }
+    } else {
+      if (isControlled()) {
+        updateInput(rangeProps.value[0]);
+      } else {
+        updateSingleKnobPosition(+targetValue);
+      }
     }
   }
 
@@ -127,12 +110,12 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
   function onInternalKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (multiple && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
       event.preventDefault();
-      if (inputRef.current) {
-        if (focussedKnob === 0 && multiInputRef2.current) {
-          inputRef.current.value = multiInputRef2.current.value;
-        } else if (focussedKnob === 1 && multiInputRef1.current) {
-          inputRef.current.value = multiInputRef1.current.value;
-        }
+      if (focussedKnob === 0) {
+        updateInput(+multipleInputRef2.current!.value);
+        // updateMultipleKnobPositions(+multipleInputRef2.current!.value, 1);
+      } else {
+        updateInput(+multipleInputRef1.current!.value);
+        // updateMultipleKnobPositions(+multipleInputRef1.current!.value, 0);
       }
       setFocussedKnob(focussedKnob === 0 ? 1 : 0);
     }
@@ -145,26 +128,58 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
     if (!inputRef.current) {
       inputRef.current = el;
       if (multiple) {
-        if (multiInputRef1.current) {
-          multiInputRef1.current.value = `${multipleProps?.value[0]}`;
+        updateInput(rangeProps.value[focussedKnob]);
+        if (multipleInputRef1.current) {
+          multipleInputRef1.current.value = `${rangeProps.value[0]}`;
         }
-        if (multiInputRef2.current) {
-          multiInputRef2.current.value = `${multipleProps?.value[1]}`;
+        if (multipleInputRef2.current) {
+          multipleInputRef2.current.value = `${rangeProps.value[1]}`;
         }
-        el.value = `${multipleProps?.value[focussedKnob]}`;
-        updateMultipleKnobPositions(+el.value);
+        updateMultipleKnobPositions(rangeProps.value[focussedKnob]);
       } else {
-        el.value = `${singleProps?.value}`;
-        updateSingleKnobPosition(+el.value);
+        updateInput(rangeProps.value[0]);
+        updateSingleKnobPosition(rangeProps.value[0]);
       }
     }
   }
 
+  function updateInput(value: number) {
+    if (inputRef.current) {
+      inputRef.current.value = `${value}`;
+    }
+  }
+
+  function syncInputs() {
+    if (inputRef.current) {
+      const targetValue = inputRef.current.value;
+      if (multiple) {
+        updateInput(isControlled() ? rangeProps.value[focussedKnob] : +targetValue);
+        updateMultipleInputs();
+        updateMultipleKnobPositions(isControlled() ? rangeProps.value[focussedKnob] : +targetValue);
+      } else {
+        updateInput(isControlled() ? rangeProps.value[0] : +targetValue);
+        updateSingleKnobPosition(isControlled() ? rangeProps.value[0] : +targetValue);
+      }
+    }
+  }
+
+  function updateMultipleInputs() {
+    if (inputRef.current) {
+      const targetValue = inputRef.current.value;
+      if (multipleInputRef1.current && multipleInputRef2.current) {
+        multipleInputRef1.current.value = focussedKnob === 0 ? targetValue : `${Math.min(+multipleInputRef1.current.value, +targetValue)}`;
+        multipleInputRef2.current.value = focussedKnob === 1 ? targetValue : `${Math.max(+multipleInputRef2.current.value, +targetValue)}`;
+      }
+    }
+  }
+
+  syncInputs();
+
   return (
     <div
       {...dataProps}
-      className={classnames('horizontal-range', baseProps.className)}
-      style={baseProps.style}
+      className={classnames('horizontal-range', rangeProps.className)}
+      style={rangeProps.style}
       >
       <div
         ref={trackRef}
@@ -191,23 +206,23 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
         data-range-item="knob"
         data-testid={`${COMPONENT}__knob`}
       />
-      {multipleProps && (
+      {multiple && (
         <>
           <div
             ref={knobRef2}
             className={classnames('horizontal-range__knob', { 'horizontal-range__knob--focus': focussed && focussedKnob === 1 })}
             data-testid={`${COMPONENT}__knob2`}
           />
-          <input type="hidden" name={baseProps.name || undefined} ref={multiInputRef1} />
-          <input type="hidden" name={multipleProps.name2 || undefined} ref={multiInputRef2} />
+          <input type="hidden" name={rangeProps.name || undefined} ref={multipleInputRef1} />
+          <input type="hidden" name={rangeProps.name2 || undefined} ref={multipleInputRef2} />
         </>
       )}
       <input
         {...otherProps}
-        name={multiple ? undefined : baseProps.name}
-        min={baseProps.min}
-        max={baseProps.max}
-        step={baseProps.step}
+        name={multiple ? undefined : rangeProps.name}
+        min={rangeProps.min}
+        max={rangeProps.max}
+        step={rangeProps.step}
         type="range"
         ref={onInputRef}
         className="horizontal-range__input"
