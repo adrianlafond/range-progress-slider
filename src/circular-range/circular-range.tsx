@@ -13,7 +13,7 @@ import './circular-range.scss';
 export type { SingleRangeProps, MultipleRangeProps, RangeMultipleChangeEvent } from '../shared';
 
 interface ExclusiveCircularRangeProps {
-  zeroAtDegree?: number;
+  zeroAtDegrees?: number;
 }
 
 export type CircularRangeProps = RangeProps & ExclusiveCircularRangeProps;
@@ -24,7 +24,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   const [focussedKnob, setFocussedKnob] = React.useState<0 | 1>(0);
 
   const { multiple, rangeProps, dataProps, otherProps } = processProps(props, focussedKnob);
-  delete otherProps.zeroAtDegree;
+  delete otherProps.zeroAtDegrees;
 
   const singleRangeProps: Required<SingleRangeProps> | null = multiple ? null : rangeProps as Required<SingleRangeProps>;
   const multipleRangeProps: Required<MultipleRangeProps> | null = multiple ? rangeProps as Required<MultipleRangeProps> : null;
@@ -41,10 +41,10 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   const isControlled = React.useCallback(() => props.value != null, [props.value]);
 
   const zeroAtDegree = React.useMemo(() => {
-    const zeroProp = props.zeroAtDegree != null ? props.zeroAtDegree : 0;
+    const zeroProp = props.zeroAtDegrees != null ? props.zeroAtDegrees : 0;
     const modulo360 = zeroProp % 360;
     return modulo360 < 0 ? modulo360 + 360 : modulo360;
-  }, [props.zeroAtDegree]);
+  }, [props.zeroAtDegrees]);
 
   function getOrigin() {
     if (rootRef.current) {
