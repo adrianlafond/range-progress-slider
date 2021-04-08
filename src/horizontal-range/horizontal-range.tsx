@@ -3,10 +3,10 @@ import classnames from 'classnames';
 import {
   processProps,
   RangeProps,
+  SingleRangeProps,
   MultipleRangeProps,
   RangeMultipleChangeEvent,
   COMPONENT,
-  SingleRangeProps,
 } from '../shared';
 import './horizontal-range.scss';
 

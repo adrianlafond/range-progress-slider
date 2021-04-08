@@ -1,16 +1,12 @@
+@import "../shared/range-progress-slider";
+
 .horizontal-range {
-  position: relative;
-  display: inline-block;
+  @extend .range-progress-slider__root;
   width: 8rem;
   height: 1rem;
 
   &__input {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
+    @extend .range-progress-slider__input;
   }
 
   &__knob {
@@ -39,13 +35,13 @@
     top: 0.35rem;
     left: 0;
     width: 100%;
-    height: 0.3rem;
+    height: $track-width;
     border-radius: 0.2rem;
-    background-color: #eee;
+    background-color: $track-color;
     overflow: hidden;
 
     &--focus {
-      background-color: #ddd;
+      background-color: $track-color--focus;
     }
 
     &-progress {
