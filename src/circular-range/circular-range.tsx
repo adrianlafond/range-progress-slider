@@ -12,13 +12,20 @@ import './circular-range.scss';
 
 export type { SingleRangeProps, MultipleRangeProps, RangeMultipleChangeEvent } from '../shared';
 
-export type CircularRangeProps = RangeProps;
+interface ExclusiveCircularRangeProps {
+  zeroAtDegree?: number;
+}
+
+export type CircularRangeProps = RangeProps & ExclusiveCircularRangeProps;
+
 
 export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: CircularRangeProps) => {
   const [focussed, setFocussed] = React.useState(false);
   const [focussedKnob, setFocussedKnob] = React.useState<0 | 1>(0);
 
   const { multiple, rangeProps, dataProps, otherProps } = processProps(props, focussedKnob);
+  delete otherProps.zeroAtDegree;
+
   const singleRangeProps: Required<SingleRangeProps> | null = multiple ? null : rangeProps as Required<SingleRangeProps>;
   const multipleRangeProps: Required<MultipleRangeProps> | null = multiple ? rangeProps as Required<MultipleRangeProps> : null;
 
@@ -32,6 +39,12 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const isControlled = React.useCallback(() => props.value != null, [props.value]);
+
+  const zeroAtDegree = React.useMemo(() => {
+    const zeroProp = props.zeroAtDegree != null ? props.zeroAtDegree : 0;
+    const modulo360 = zeroProp % 360;
+    return modulo360 < 0 ? modulo360 + 360 : modulo360;
+  }, [props.zeroAtDegree]);
 
   function getOrigin() {
     if (rootRef.current) {
@@ -47,12 +60,15 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       const { min, max } = rangeProps;
       const radians = Math.atan2(event.clientY - origin[1], event.clientX - origin[0]) + Math.PI;
 
-      // 0 is at 9:00:
+      // 0 is at 9:00 by default:
       let percent = radians / (Math.PI * 2);
 
-      // TODO: allow 0 to be set by prop
-      // Offset so 0 is at 12:00:
-      percent -= 0.25;
+      const zero = Math.max(0, Math.min(360, zeroAtDegree));
+      if (zero > 270) {
+        percent -= (1 - (zero - 270) / 90) * 0.25;
+      } else if (zero < 270) {
+        percent -= (1 - (270 - zero) / 270) * 0.75 + 0.25;
+      }
       if (percent < 0) {
         percent = 1 + percent;
       }
@@ -88,8 +104,12 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
     if (rangeProps && rootRef.current && knobRef.current) {
       const radius = Math.min(rootRef.current.offsetWidth, rootRef.current.offsetHeight) * 0.5 - 10;
       const percent = (value - rangeProps.min) / (rangeProps.max - rangeProps.min);
-      const radians = percent * (Math.PI * 2) - Math.PI * 0.5;
-      // console.log(radius + Math.cos(radians) * radius);
+
+      const zeroOffset = zeroAtDegree <= 90
+        ? (90 - zeroAtDegree) / 90 * Math.PI * 0.5
+        : (1 - (zeroAtDegree - 90) / 270) * Math.PI * 1.5 + Math.PI * 0.5;
+
+      const radians = percent * (Math.PI * 2) - zeroOffset;
       knobRef.current.style.transform = `translate(
         ${radius + 10 + Math.cos(radians) * radius}px,
         ${radius + 10 + Math.sin(radians) * radius}px
