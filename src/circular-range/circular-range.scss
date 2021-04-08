@@ -26,4 +26,10 @@
       stroke: $track-color--focus;
     }
   }
+
+  &__knob {
+    stroke: #000;
+    stroke-width: 1px;
+    fill: white;
+  }
 }
