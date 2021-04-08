@@ -43,19 +43,22 @@
     &--focus {
       background-color: $track-color--focus;
     }
+    &--disabled {
+      background-color: $track-color--disabled;
+    }
 
     &-progress {
       position: absolute;
       top: 0;
       left: 0;
       height: 100%;
-      background-color: #333;
+      background-color: $track-progress-color;
 
       &--focus {
-        background-color: blue;
+        background-color: $track-progress-color--focus;
       }
       &--disabled {
-        background-color: #ccc;
+        background-color: $track-progress-color--disabled;
       }
     }
   }

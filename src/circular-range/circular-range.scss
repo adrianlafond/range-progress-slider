@@ -4,6 +4,7 @@
   @extend .range-progress-slider__root;
   width: 8rem;
   height: 8rem;
+  // border: 1px dotted red;
 
   &__input {
     @extend .range-progress-slider__input;
@@ -24,6 +25,23 @@
 
     &--focus {
       stroke: $track-color--focus;
+    }
+    &--disabled {
+      stroke: $track-color--disabled;
+    }
+
+    &-progress {
+      fill: none;
+      stroke: $track-progress-color;
+      stroke-width: $track-width;
+      stroke-linecap: round;
+
+      &--focus {
+        stroke: $track-progress-color--focus;
+      }
+      &--disabled {
+        stroke: $track-progress-color--disabled;
+      }
     }
   }
 

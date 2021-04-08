@@ -1,5 +1,9 @@
 $track-color: #eee;
 $track-color--focus: #ddd;
+$track-color--disabled: #eee;
+$track-progress-color: #333;
+$track-progress-color--focus: #00f;
+$track-progress-color--disabled: #ccc;
 $track-width: 0.3rem;
 
 .range-progress-slider {

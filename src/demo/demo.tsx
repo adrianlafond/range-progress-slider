@@ -20,7 +20,7 @@ export const Demo = () => {
       <h2>Circular Range</h2>
       <div>
         <label style={{ marginRight: '1rem' }}>Uncontrolled</label>
-        <CircularRange data-foo="bar" step={5} defaultValue={0} zeroAtDegree={180} />
+        <CircularRange data-foo="bar" step={5} defaultValue={0} />
       </div>
 
       <h2>Horizontal Range</h2>
