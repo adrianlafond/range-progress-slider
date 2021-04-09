@@ -23,7 +23,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test --coverage=true --collectCoverageFrom=./src/**/* --watchAll=false",
+    "test": "react-scripts test --coverage=true --collectCoverageFrom=./src/circular-range/**/* --collectCoverageFrom=./src/horizontal-range/**/* --watchAll=false",
     "eject": "react-scripts eject",
     "storybook": "start-storybook -p 6006 -s public",
     "build-storybook": "build-storybook -s public"

@@ -18,4 +18,4 @@ Single.args = {
 export const Multiple = Template.bind({});
 Multiple.args = {
   multiple: true,
-};;
+};
