@@ -31,9 +31,6 @@ describe('processProps() >', () => {
     it(`sets "disabled" to ${defaultRangeProps.disabled} by default`, () => {
       expect(processProps().rangeProps.disabled).toBe(defaultRangeProps.disabled);
     });
-    it(`sets "readOnly" to ${defaultRangeProps.readOnly} by default`, () => {
-      expect(processProps().rangeProps.readOnly).toBe(defaultRangeProps.readOnly);
-    });
   });
 
   describe('name, name2 >', () => {

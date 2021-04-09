@@ -14,6 +14,7 @@ export type { SingleRangeProps, MultipleRangeProps, RangeMultipleChangeEvent } f
 
 interface ExclusiveCircularRangeProps {
   zeroAtDegrees?: number;
+  counterClockwise?: boolean;
 }
 
 export type CircularRangeProps = RangeProps & ExclusiveCircularRangeProps;
@@ -23,7 +24,9 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   const [focussedKnob, setFocussedKnob] = React.useState<0 | 1>(0);
 
   const { multiple, rangeProps, dataProps, otherProps } = processProps(props, focussedKnob);
+  // TODO: write/expand util func to do this:
   delete otherProps.zeroAtDegrees;
+  delete otherProps.counterClockwise;
 
   // TODO: make props:
   const trackRadius = 54;
@@ -61,19 +64,31 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
     const origin = getOrigin();
     if (origin) {
       const { min, max } = rangeProps;
-      const radians = Math.atan2(event.clientY - origin[1], event.clientX - origin[0]) + Math.PI;
 
-      // 0 is at 9:00 by default:
+      // Get radians between mouse and center of track:
+      let radians = Math.atan2(event.clientY - origin[1], event.clientX - origin[0]);
+
+      // Set radians back to 0 or 12:00:
+      radians += Math.PI * 0.5;
+
+      if (radians < 0) {
+        // Ensure 0 <= radians <= 6.28:
+        radians += Math.PI * 2;
+      }
+
+      if (props.counterClockwise) {
+        // "Flip" the radians to get counter-clockwise values:
+        radians = Math.PI * 2 - radians;
+      }
+
+      // Convert the radians to a percent:
       let percent = radians / (Math.PI * 2);
 
-      const zero = Math.max(0, Math.min(360, zeroAtDegrees));
-      if (zero > 270) {
-        percent -= (1 - (zero - 270) / 90) * 0.25;
-      } else if (zero < 270) {
-        percent -= (1 - (270 - zero) / 270) * 0.75 + 0.25;
-      }
+      // Account for prop zeroAtDegrees:
+      percent -= (props.counterClockwise ? -1 : 1) * (zeroAtDegrees / 360);
+      percent %= 1;
       if (percent < 0) {
-        percent = 1 + percent;
+        percent += 1;
       }
 
       return min + percent * (max - min);
@@ -105,13 +120,15 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
 
   const updateSingleKnobPosition = React.useCallback((value: number) => {
     if (rangeProps && trackRef.current && progressRef.current && knobRef.current) {
-      const percent = (value - rangeProps.min) / (rangeProps.max - rangeProps.min);
+      let percent = (value - rangeProps.min) / (rangeProps.max - rangeProps.min);
+      const zeroAtRadians = zeroAtDegrees / 180 * Math.PI - Math.PI * 0.5;
 
-      const zeroOffset = zeroAtDegrees <= 90
-        ? (90 - zeroAtDegrees) / 90 * Math.PI * 0.5
-        : (1 - (zeroAtDegrees - 90) / 270) * Math.PI * 1.5 + Math.PI * 0.5;
+      let radians = percent * (Math.PI * 2);
+      if (props.counterClockwise) {
+        radians = Math.PI * 2 - radians;
+      }
+      radians += zeroAtRadians;
 
-      const radians = percent * (Math.PI * 2) - zeroOffset;
       const knobX = 64 + Math.cos(radians) * trackRadius;
       const knobY = 64 + Math.sin(radians) * trackRadius;
       knobRef.current.style.transform = `translate(
@@ -119,16 +136,21 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
         ${knobY}px
       )`;
 
-      const pt1x = trackMargin + trackRadius + Math.cos(-zeroOffset) * trackRadius;
-      const pt1y = trackMargin + trackRadius + Math.sin(-zeroOffset) * trackRadius;
-      const largeArc = radians + zeroOffset > Math.PI ? 1 : 0;
+      const pt1x = trackMargin + trackRadius + Math.cos(zeroAtRadians) * trackRadius;
+      const pt1y = trackMargin + trackRadius + Math.sin(zeroAtRadians) * trackRadius;
+      const radiansOffset = radians - zeroAtRadians;
+
+      const largeArc = props.counterClockwise
+        ? (radiansOffset < Math.PI ? 1 : 0)
+        : (radiansOffset < Math.PI ? 0 : 1);
+      const sweep = props.counterClockwise ? 0 : 1;
 
       const d = `M ${pt1x} ${pt1y} ` +
-        `A ${trackRadius} ${trackRadius} 0 ${largeArc} 1 ` +
+        `A ${trackRadius} ${trackRadius} 0 ${largeArc} ${sweep} ` +
         `${knobX} ${knobY}`;
       progressRef.current.setAttribute('d', d);
     }
-  }, [rangeProps, zeroAtDegrees]);
+  }, [rangeProps, zeroAtDegrees, props.counterClockwise]);
 
   const updateMultipleKnobPositions = React.useCallback((value: number, paramFocussedKnob = focussedKnob) => {
     if (rangeProps && knobRef.current && knobRef2.current && multipleInputRef1.current && multipleInputRef2.current && progressRef.current) {
@@ -158,7 +180,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       }
     } else {
       if (!isControlled()) {
-        updateSingleKnobPosition(+targetValue);
+        // updateSingleKnobPosition(+targetValue);
       }
     }
   }
@@ -306,7 +328,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
         <circle
           cx={0}
           cy={0}
-          r={'0.5rem'}
+          r={8}
           className={knobClassName}
           ref={knobRef}
         />
@@ -314,7 +336,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
         <circle
           cx={0}
           cy={0}
-          r={'0.5rem'}
+          r={8}
           className={knobClassName}
         />
       )}
