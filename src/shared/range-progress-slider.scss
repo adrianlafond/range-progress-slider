@@ -1,0 +1,23 @@
+$track-color: #eee;
+$track-color--focus: #ddd;
+$track-color--disabled: #eee;
+$track-progress-color: #333;
+$track-progress-color--focus: #00f;
+$track-progress-color--disabled: #ccc;
+$track-width: 0.3rem;
+
+.range-progress-slider {
+  &__root {
+    position: relative;
+    display: inline-block;
+  }
+
+  &__input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+  }
+}

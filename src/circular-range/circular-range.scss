@@ -1,0 +1,53 @@
+@import "../shared/range-progress-slider";
+
+.circular-range {
+  @extend .range-progress-slider__root;
+  width: 8rem;
+  height: 8rem;
+  // border: 1px dotted red;
+
+  &__input {
+    @extend .range-progress-slider__input;
+  }
+
+  &__grfx {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  &__track {
+    fill: none;
+    stroke: $track-color;
+    stroke-width: $track-width;
+
+    &--focus {
+      stroke: $track-color--focus;
+    }
+    &--disabled {
+      stroke: $track-color--disabled;
+    }
+
+    &-progress {
+      fill: none;
+      stroke: $track-progress-color;
+      stroke-width: $track-width;
+      stroke-linecap: round;
+
+      &--focus {
+        stroke: $track-progress-color--focus;
+      }
+      &--disabled {
+        stroke: $track-progress-color--disabled;
+      }
+    }
+  }
+
+  &__knob {
+    stroke: #000;
+    stroke-width: 1px;
+    fill: white;
+  }
+}
