@@ -1,8 +1,8 @@
 {
   "name": "range-progress-slider",
   "version": "0.1.0",
-  "private": true,
   "license": "MIT",
+  "main": "./dist/range-progress-slider.js",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
@@ -28,6 +28,7 @@
       }
     ]
   },
+  "eslintignore": ["./dist/**.*"],
   "browserslist": {
     "production": [
       ">0.2%",
@@ -70,5 +71,9 @@
     "style-loader": "^2.0.0",
     "typescript": "^4.1.2",
     "webpack-cli": "^4.6.0"
+  },
+  "peerDependencies": {
+      "react": "^16.8.0-0 || ^17.0.0-0",
+      "react-dom": "^16.8.0-0 || ^17.0.0-0"
   }
 }

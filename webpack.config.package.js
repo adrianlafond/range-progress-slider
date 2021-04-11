@@ -4,7 +4,7 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = {
-  entry: path.join(__dirname, './src/package.tsx'),
+  entry: path.join(__dirname, `./src/${pkg.name}.tsx`),
   mode: 'production',
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.json']
