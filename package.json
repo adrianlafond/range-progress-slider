@@ -1,11 +1,12 @@
 {
   "name": "range-progress-slider",
   "version": "0.1.0",
-  "private": true,
   "license": "MIT",
+  "main": "./dist/range-progress-slider.js",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "package": "webpack --config webpack.config.package.js",
     "test": "react-scripts test --coverage=true --collectCoverageFrom=./src/circular-range/**/* --collectCoverageFrom=./src/horizontal-range/**/* --watchAll=false",
     "eject": "react-scripts eject",
     "storybook": "start-storybook -p 6006 -s public",
@@ -27,6 +28,7 @@
       }
     ]
   },
+  "eslintignore": ["./dist/**.*"],
   "browserslist": {
     "production": [
       ">0.2%",
@@ -57,11 +59,21 @@
     "@types/node": "^12.0.0",
     "@types/react": "^17.0.0",
     "@types/react-dom": "^17.0.0",
+    "awesome-typescript-loader": "^5.2.1",
+    "clean-webpack-plugin": "^3.0.0",
+    "css-loader": "^5.2.1",
+    "mini-css-extract-plugin": "^1.4.1",
     "node-sass": "^5.0.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-scripts": "4.0.3",
+    "sass-loader": "~10.1.1",
+    "style-loader": "^2.0.0",
     "typescript": "^4.1.2",
-    "web-vitals": "^1.0.1"
+    "webpack-cli": "^4.6.0"
+  },
+  "peerDependencies": {
+      "react": "^16.8.0-0 || ^17.0.0-0",
+      "react-dom": "^16.8.0-0 || ^17.0.0-0"
   }
 }
