@@ -103,6 +103,8 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
 
   // When mouse is pressed down, updates the input value and knob positions on
   // each mouse move.
+  // TODO: fire an onChange event because the default mousedown event is
+  //   default prevented
   function onMouseMove(event: MouseEvent) {
     const value = getValueFromMouse(event);
     updateInput(value);
@@ -174,9 +176,12 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   }, [rangeProps, focussedKnob]);
 
   // Captures changes events from the primary input and updates knobs in response.
+  // Only called in response to keyboard input because on mousedown the event's
+  // default is prevented.
   // TODO: ensure the event in props.onChange() has correct value(s).
   function onInternalChange(event: React.ChangeEvent<HTMLInputElement>) {
     const targetValue = event.target.value;
+    console.log(targetValue);
 
     if (singleRangeProps) {
       singleRangeProps.onChange(event);
@@ -197,7 +202,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       }
     } else {
       if (!isControlled()) {
-        // updateSingleKnobPosition(+targetValue);
+        updateSingleKnobPosition(+targetValue);
       }
     }
   }
@@ -229,6 +234,9 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
     const value = getValueFromMouse(event);
     updateInput(value);
     listenForMouseMove();
+
+    // Because the default is prevented, the input must be focussed manually.
+    (event.target as HTMLInputElement).focus();
 
     if (multiple) {
       // TODO: find the closest knob and focus it.
