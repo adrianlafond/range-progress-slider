@@ -45,7 +45,7 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
     }
   }, [rangeProps, props.style]);
 
-  const updateMultipleKnobPositions = React.useCallback((value: number, paramFocussedKnob = focussedKnob) => {
+  const updateMultipleKnobPositions = React.useCallback(() => {
     if (rangeProps && knobRef.current && knobRef2.current && multipleInputRef1.current && multipleInputRef2.current && progressRef.current) {
       const trackWidth = trackRef.current?.offsetWidth || 0;
       const knob1Width = knobRef.current.offsetWidth;
@@ -63,7 +63,7 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
       progressRef.current.style.left = `${px1 + knob1Width - 1}px`
       progressRef.current.style.width = `${px2 - px1 - knob1Width + 2}px`;
     }
-  }, [rangeProps, focussedKnob]);
+  }, [rangeProps]);
 
   function onInternalChange(event: React.ChangeEvent<HTMLInputElement>) {
     const targetValue = event.target.value;
@@ -83,7 +83,7 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
     if (multiple) {
       if (!isControlled()) {
         updateMultipleInputs();
-        updateMultipleKnobPositions(+targetValue);
+        updateMultipleKnobPositions();
       }
     } else {
       if (!isControlled()) {
@@ -145,7 +145,7 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
         if (multipleInputRef2.current) {
           multipleInputRef2.current.value = `${multipleRangeProps.value[1]}`;
         }
-        updateMultipleKnobPositions(multipleRangeProps.value[focussedKnob]);
+        updateMultipleKnobPositions();
       } else if (singleRangeProps) {
         updateInput(singleRangeProps.value);
         updateSingleKnobPosition(singleRangeProps.value);
@@ -165,7 +165,7 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
       if (multipleRangeProps) {
         updateInput(isControlled() ? multipleRangeProps.value[focussedKnob] : +targetValue);
         updateMultipleInputs();
-        updateMultipleKnobPositions(isControlled() ? multipleRangeProps.value[focussedKnob] : +targetValue);
+        updateMultipleKnobPositions();
       } else if (singleRangeProps) {
         updateInput(isControlled() ? singleRangeProps.value : +targetValue);
         updateSingleKnobPosition(isControlled() ? singleRangeProps.value : +targetValue);

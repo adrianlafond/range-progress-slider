@@ -20,18 +20,26 @@ export const Demo = () => {
       <h2>Circular Range</h2>
       <div>
         <label style={{ marginRight: '1rem' }}>Uncontrolled</label>
-        <CircularRange data-foo="bar" step={5} defaultValue={25} zeroAtDegrees={0} />
-        <CircularRange data-foo="bar" step={5} defaultValue={25} zeroAtDegrees={90} />
-        <CircularRange data-foo="bar" step={5} defaultValue={25} zeroAtDegrees={180} />
-        <CircularRange data-foo="bar" step={5} defaultValue={25} zeroAtDegrees={270} />
+        <CircularRange step={5} defaultValue={25} zeroAtDegrees={0} />
+        <CircularRange step={5} defaultValue={25} zeroAtDegrees={90} />
+        <CircularRange step={5} defaultValue={25} zeroAtDegrees={180} />
+        <CircularRange step={5} defaultValue={25} zeroAtDegrees={270} />
       </div>
 
       <div style={{ marginTop: '1rem' }}>
-        <label style={{ marginRight: '1rem' }}>Uncontrolled</label>
-        <CircularRange data-foo="bar" step={5} defaultValue={25} counterClockwise zeroAtDegrees={0} />
-        <CircularRange data-foo="bar" step={5} defaultValue={25} counterClockwise zeroAtDegrees={90} />
-        <CircularRange data-foo="bar" step={5} defaultValue={25} counterClockwise zeroAtDegrees={180} />
-        <CircularRange data-foo="bar" step={5} defaultValue={25} counterClockwise zeroAtDegrees={270} />
+        <label style={{ marginRight: '1rem' }}>Counter-clockwise</label>
+        <CircularRange step={5} defaultValue={25} counterClockwise zeroAtDegrees={0} />
+        <CircularRange step={5} defaultValue={25} counterClockwise zeroAtDegrees={90} />
+        <CircularRange step={5} defaultValue={25} counterClockwise zeroAtDegrees={180} />
+        <CircularRange step={5} defaultValue={25} counterClockwise zeroAtDegrees={270} />
+      </div>
+
+      <div>
+        <label style={{ marginRight: '1rem' }}>Multiple</label>
+        <CircularRange multiple step={5} defaultValue={[25, 75]} zeroAtDegrees={0} />
+        <CircularRange multiple step={5} defaultValue={[25, 75]} zeroAtDegrees={90} />
+        <CircularRange multiple step={5} defaultValue={[25, 75]} zeroAtDegrees={180} />
+        <CircularRange multiple step={5} defaultValue={[25, 75]} zeroAtDegrees={270} />
       </div>
 
       <h2>Horizontal Range</h2>
