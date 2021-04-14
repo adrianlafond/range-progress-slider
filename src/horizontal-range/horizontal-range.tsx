@@ -185,13 +185,6 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
 
   syncInputs();
 
-  const knobClassName = classnames(
-    'horizontal-range__knob', {
-      'horizontal-range__knob--focus': focussed && (!multiple || (multiple && focussedKnob === 0)),
-      'horizontal-range__knob--disabled': rangeProps.disabled,
-    }
-  );
-
   return (
     <div
       {...dataProps}
@@ -216,7 +209,12 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
       </div>
       <div
         ref={knobRef}
-        className={knobClassName}
+        className={classnames(
+          'horizontal-range__knob', {
+            'horizontal-range__knob--focus': focussed && (!multiple || (multiple && focussedKnob === 0)),
+            'horizontal-range__knob--disabled': rangeProps.disabled,
+          }
+        )}
         data-range-item="knob"
         data-testid={`${COMPONENT}__knob`}
       />
@@ -224,7 +222,12 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
         <>
           <div
             ref={knobRef2}
-            className={knobClassName}
+            className={classnames(
+              'horizontal-range__knob', {
+                'horizontal-range__knob--focus': focussed && (!multiple || (multiple && focussedKnob === 1)),
+                'horizontal-range__knob--disabled': rangeProps.disabled,
+              }
+            )}
             data-testid={`${COMPONENT}__knob2`}
           />
           <input type="hidden" name={rangeProps.name || undefined} ref={multipleInputRef1} />
