@@ -1,32 +1,22 @@
 import React from 'react';
 import classnames from 'classnames';
 import {
-  processProps,
-  RangeProps,
+  processCircularRangeProps,
   SingleRangeProps,
   MultipleRangeProps,
+  CircularRangeProps,
   RangeMultipleChangeEvent,
   COMPONENT,
 } from '../shared';
 import './circular-range.scss';
 
-export type { SingleRangeProps, MultipleRangeProps, RangeMultipleChangeEvent } from '../shared';
-
-interface ExclusiveCircularRangeProps {
-  zeroAtDegrees?: number;
-  counterClockwise?: boolean;
-}
-
-export type CircularRangeProps = RangeProps & ExclusiveCircularRangeProps;
+export type { CircularRangeProps, SingleRangeProps, MultipleRangeProps, RangeMultipleChangeEvent } from '../shared';
 
 export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: CircularRangeProps) => {
   const [focussed, setFocussed] = React.useState(false);
   const [focussedKnob, setFocussedKnob] = React.useState<0 | 1>(0);
 
-  const { multiple, rangeProps, dataProps, otherProps } = processProps(props, focussedKnob);
-  // TODO: write/expand util func to do this:
-  delete otherProps.zeroAtDegrees;
-  delete otherProps.counterClockwise;
+  const { multiple, rangeProps, dataProps, otherProps } = processCircularRangeProps(props, focussedKnob);
 
   // TODO: make props:
   const trackRadius = 54;
@@ -104,7 +94,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   // When mouse is pressed down, updates the input value and knob positions on
   // each mouse move.
   // TODO: fire an onChange event because the default mousedown event is
-  //   default prevented
+  // default prevented!
   function onMouseMove(event: MouseEvent) {
     const value = getValueFromMouse(event);
     updateInput(value);

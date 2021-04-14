@@ -1,6 +1,6 @@
 import React from 'react';
 import './demo.scss';
-import { CircularRange, CircularRangeProps } from '../circular-range';
+import { CircularRange } from '../circular-range';
 import { HorizontalRange, MultipleRangeProps, RangeMultipleChangeEvent } from '../horizontal-range';
 
 export const Demo = () => {

@@ -1,7 +1,7 @@
 import React from 'react';
 import classnames from 'classnames';
 import {
-  processProps,
+  processHorizontalRangeProps,
   RangeProps,
   SingleRangeProps,
   MultipleRangeProps,
@@ -18,7 +18,7 @@ export const HorizontalRange: React.FC<HorizontalRangeProps> = React.memo((props
   const [focussed, setFocussed] = React.useState(false);
   const [focussedKnob, setFocussedKnob] = React.useState<0 | 1>(0);
 
-  const { multiple, rangeProps, dataProps, otherProps } = processProps(props, focussedKnob);
+  const { multiple, rangeProps, dataProps, otherProps } = processHorizontalRangeProps(props, focussedKnob);
   const singleRangeProps: Required<SingleRangeProps> | null = multiple ? null : rangeProps as Required<SingleRangeProps>;
   const multipleRangeProps: Required<MultipleRangeProps> | null = multiple ? rangeProps as Required<MultipleRangeProps> : null;
 
