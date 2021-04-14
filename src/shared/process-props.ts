@@ -19,10 +19,18 @@ export function processHorizontalRangeProps(props: { [key: string]: any } = {}, 
   return processProps(props, focussedKnob);
 }
 
+/**
+ * Takes raw props where virtually all properties are optional and returns an
+ * object ready for use by a vertical range component with default values supplied.
+ */
 export function processVerticalRangeProps(props: { [key: string]: any } = {}, focussedKnob: 0 | 1 = 0): ProcessedProps {
   return processProps(props, focussedKnob);
 }
 
+/**
+ * Takes raw props where virtually all properties are optional and returns an
+ * object ready for use by a circular range component with default values supplied.
+ */
 export function processCircularRangeProps(props: { [key: string]: any } = {}, focussedKnob: 0 | 1 = 0): ProressedCircularRangeProps {
   const multiple = getValueMultiple(props.multiple);
   const baseProps = getBaseProps(props);

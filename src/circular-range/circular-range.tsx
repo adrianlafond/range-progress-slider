@@ -21,6 +21,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   // TODO: make props:
   const trackRadius = 54;
   const trackMargin = 10;
+  const trackCenter = React.useMemo(() => trackRadius + trackMargin, [trackRadius, trackMargin]);
 
   const singleRangeProps: Required<SingleRangeProps> | null = multiple ? null : rangeProps as Required<SingleRangeProps>;
   const multipleRangeProps: Required<MultipleRangeProps> | null = multiple ? rangeProps as Required<MultipleRangeProps> : null;
@@ -132,18 +133,18 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       radians += zeroAtRadians;
 
       // Calculate x,y where the range starts (min or, usually, zero).
-      const pt1x = trackMargin + trackRadius + Math.cos(zeroAtRadians) * trackRadius;
-      const pt1y = trackMargin + trackRadius + Math.sin(zeroAtRadians) * trackRadius;
+      const pt1x = trackCenter + Math.cos(zeroAtRadians) * trackRadius;
+      const pt1y = trackCenter + Math.sin(zeroAtRadians) * trackRadius;
 
       // Calculate x,y for the knob (or where the range extends to).
-      const knobX = 64 + Math.cos(radians) * trackRadius;
-      const knobY = 64 + Math.sin(radians) * trackRadius;
+      const knobX = trackCenter + Math.cos(radians) * trackRadius;
+      const knobY = trackCenter + Math.sin(radians) * trackRadius;
       knobRef.current.style.transform = `translate(
         ${knobX}px,
         ${knobY}px
       )`;
 
-      // Calculate largArc and sweep values to draw the arc.
+      // Calculate large arc and sweep values to draw the arc.
       const radiansOffset = radians - zeroAtRadians;
       const largeArc = props.counterClockwise
         ? (radiansOffset < Math.PI ? 1 : 0)
@@ -157,7 +158,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
         `${knobX} ${knobY}`;
       progressRef.current.setAttribute('d', d);
     }
-  }, [rangeProps, zeroAtDegrees, props.counterClockwise]);
+  }, [rangeProps, zeroAtDegrees, props.counterClockwise, trackCenter]);
 
   const updateMultipleKnobPositions = React.useCallback((value: number, paramFocussedKnob = focussedKnob) => {
     if (rangeProps && knobRef.current && knobRef2.current && multipleInputRef1.current && multipleInputRef2.current && progressRef.current) {
