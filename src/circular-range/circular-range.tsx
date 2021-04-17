@@ -385,12 +385,13 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
           ref={progressRef}
         />
         <ellipse
-          cx={multiple ? 4 : 0}
+          cx={multiple ? (props.counterClockwise ? 4 : -4) : 0}
           cy={0}
           rx={4}
           ry={8}
           className={classnames(
-            'circular-range__knob', {
+            'circular-range__knob',
+            'circular-range__knob--0', {
             'circular-range__knob--focus': focussed && focussedKnob === 0,
             'circular-range__knob--disabled': rangeProps.disabled,
           }
@@ -399,12 +400,13 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
         />
       {multiple && (
         <ellipse
-          cx={-4}
+          cx={props.counterClockwise ? -4 : 4}
           cy={0}
           rx={4}
           ry={8}
           className={classnames(
-            'circular-range__knob', {
+            'circular-range__knob',
+            'circular-range__knob--1', {
               'circular-range__knob--focus': focussed && focussedKnob === 1,
               'circular-range__knob--disabled': rangeProps.disabled,
             }

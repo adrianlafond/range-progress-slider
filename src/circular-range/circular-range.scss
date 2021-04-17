@@ -49,5 +49,12 @@
     stroke: #000;
     stroke-width: 1px;
     fill: white;
+
+    &--0 {
+      fill: red;
+    }
+    &--1 {
+      fill: yellow;
+    }
   }
 }
