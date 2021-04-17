@@ -190,10 +190,13 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
         ${pt2y}px
       )`;
 
+      const radiansDelta = radians2 - radians1;
+      console.log(radiansDelta);
+
       // Calculate large arc and sweep values to draw the arc.
       const largeArc = props.counterClockwise
-        ? (radians1 < Math.PI ? 1 : 0)
-        : (radians1 < Math.PI ? 0 : 1);
+        ? (radiansDelta > -Math.PI ? 0 : 1)
+        : (radiansDelta < Math.PI ? 0 : 1);
       const sweep = props.counterClockwise ? 0 : 1;
 
       // Update the "d" attribute of the path to draw the arc.

@@ -36,10 +36,18 @@ export const Demo = () => {
 
       <div>
         <label style={{ marginRight: '1rem' }}>Multiple</label>
-        <CircularRange multiple step={5} defaultValue={[25, 75]} zeroAtDegrees={0} />
-        <CircularRange multiple step={5} defaultValue={[25, 75]} zeroAtDegrees={90} />
-        <CircularRange multiple step={5} defaultValue={[25, 75]} zeroAtDegrees={180} />
-        <CircularRange multiple step={5} defaultValue={[25, 75]} zeroAtDegrees={270} />
+        <CircularRange multiple defaultValue={[25, 75]} zeroAtDegrees={0} />
+        <CircularRange multiple defaultValue={[25, 75]} zeroAtDegrees={90} />
+        <CircularRange multiple defaultValue={[25, 75]} zeroAtDegrees={180} />
+        <CircularRange multiple defaultValue={[25, 75]} zeroAtDegrees={270} />
+      </div>
+
+      <div>
+        <label style={{ marginRight: '1rem' }}>Multiple</label>
+        <CircularRange multiple counterClockwise defaultValue={[25, 75]} zeroAtDegrees={0} />
+        <CircularRange multiple counterClockwise defaultValue={[25, 75]} zeroAtDegrees={90} />
+        <CircularRange multiple counterClockwise defaultValue={[25, 75]} zeroAtDegrees={180} />
+        <CircularRange multiple counterClockwise defaultValue={[25, 75]} zeroAtDegrees={270} />
       </div>
 
       <h2>Horizontal Range</h2>
