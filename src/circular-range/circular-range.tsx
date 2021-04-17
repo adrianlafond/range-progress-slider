@@ -190,10 +190,8 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
         ${pt2y}px
       ) rotate(${radians2 + Math.PI * 0.5}rad)`;
 
-      const radiansDelta = radians2 - radians1;
-      console.log(radiansDelta);
-
       // Calculate large arc and sweep values to draw the arc.
+      const radiansDelta = radians2 - radians1;
       const largeArc = props.counterClockwise
         ? (radiansDelta > -Math.PI ? 0 : 1)
         : (radiansDelta < Math.PI ? 0 : 1);
@@ -387,21 +385,21 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
           ref={progressRef}
         />
         <ellipse
-          cx={0}
+          cx={multiple ? 4 : 0}
           cy={0}
           rx={4}
           ry={8}
           className={classnames(
             'circular-range__knob', {
-              'circular-range__knob--focus': focussed && focussedKnob === 0,
-              'circular-range__knob--disabled': rangeProps.disabled,
-            }
+            'circular-range__knob--focus': focussed && focussedKnob === 0,
+            'circular-range__knob--disabled': rangeProps.disabled,
+          }
           )}
           ref={knobRef}
         />
       {multiple && (
         <ellipse
-          cx={0}
+          cx={-4}
           cy={0}
           rx={4}
           ry={8}
