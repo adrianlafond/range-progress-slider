@@ -29,8 +29,8 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   const rootRef = React.useRef<HTMLDivElement>();
   const trackRef = React.useRef<SVGCircleElement>(null);
   const progressRef = React.useRef<SVGPathElement>(null);
-  const knobRef = React.useRef<SVGCircleElement>(null);
-  const knobRef2 = React.useRef<SVGCircleElement>(null);
+  const knobRef = React.useRef<SVGEllipseElement>(null);
+  const knobRef2 = React.useRef<SVGEllipseElement>(null);
   const multipleInputRef1 = React.useRef<HTMLInputElement>(null);
   const multipleInputRef2 = React.useRef<HTMLInputElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -149,7 +149,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       knobRef.current.style.transform = `translate(
         ${knobX}px,
         ${knobY}px
-      )`;
+      ) rotate(${radians + Math.PI * 0.5}rad)`;
 
       // Calculate large arc and sweep values to draw the arc.
       const radiansOffset = radians - zeroAtRadians;
@@ -180,7 +180,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       knobRef.current.style.transform = `translate(
         ${pt1x}px,
         ${pt1y}px
-      )`;
+      ) rotate(${radians1 + Math.PI * 0.5}rad)`;
 
       // Calculate x,y for the first knob.
       const pt2x = trackCenter + Math.cos(radians2) * trackRadius;
@@ -188,7 +188,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       knobRef2.current.style.transform = `translate(
         ${pt2x}px,
         ${pt2y}px
-      )`;
+      ) rotate(${radians2 + Math.PI * 0.5}rad)`;
 
       const radiansDelta = radians2 - radians1;
       console.log(radiansDelta);
@@ -386,10 +386,11 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
           d=""
           ref={progressRef}
         />
-        <circle
+        <ellipse
           cx={0}
           cy={0}
-          r={8}
+          rx={4}
+          ry={8}
           className={classnames(
             'circular-range__knob', {
               'circular-range__knob--focus': focussed && focussedKnob === 0,
@@ -399,10 +400,11 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
           ref={knobRef}
         />
       {multiple && (
-        <circle
+        <ellipse
           cx={0}
           cy={0}
-          r={8}
+          rx={4}
+          ry={8}
           className={classnames(
             'circular-range__knob', {
               'circular-range__knob--focus': focussed && focussedKnob === 1,
