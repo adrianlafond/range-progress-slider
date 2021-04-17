@@ -12,9 +12,34 @@ import './circular-range.scss';
 
 export type { CircularRangeProps, SingleRangeProps, MultipleRangeProps, RangeMultipleChangeEvent } from '../shared';
 
+// TODO: clean up:
+// mouse -> getValueFromMouse() -> set knob positions
+// input keyboard               -> set knob positions
+// prop value                   -> set knob positions
+
+const initialState: {
+  disabled: boolean;
+  complete: boolean;
+  focussed: boolean;
+  focussedKnob: number;
+  knobTransform: string;
+  knob2Transform?: string;
+  progressD: string;
+} = {
+  disabled: false,
+  complete: false,
+  focussed: false,
+  focussedKnob: 0,
+  knobTransform: '',
+  knob2Transform: '',
+  progressD: '',
+};
+
 export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: CircularRangeProps) => {
   const [focussed, setFocussed] = React.useState(false);
   const [focussedKnob, setFocussedKnob] = React.useState<0 | 1>(0);
+  // const [progressComplete, setProgressComplete] = React.useState(false);
+  const progressComplete = React.useRef(false);
 
   const { multiple, rangeProps, dataProps, otherProps } = processCircularRangeProps(props, focussedKnob);
 
@@ -92,7 +117,16 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
         percent += 1;
       }
 
-      return min + percent * (max - min);
+      const value = min + percent * (max - min);
+      if (inputRef.current) {
+        const currentValue = +inputRef.current.value;
+        if (currentValue - value >= 50) {
+          return Math.min(currentValue, 100);
+        } else if (currentValue - value <= -50) {
+          return Math.max(currentValue, 0);
+        }
+      }
+      return value;
     }
     return 0;
   }
@@ -163,6 +197,9 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
         `A ${trackRadius} ${trackRadius} 0 ${largeArc} ${sweep} ` +
         `${knobX} ${knobY}`;
       progressRef.current.setAttribute('d', d);
+
+      // setProgressComplete(percent >= 1);
+      progressComplete.current = percent >= 1;
     }
   }, [getRadiansForPercent, rangeProps, zeroAtRadians, props.counterClockwise, trackCenter]);
 
@@ -370,6 +407,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
             'circular-range__track', {
               'circular-range__track--focus': focussed,
               'circular-range__track--disabled': rangeProps.disabled,
+              'circular-range__track--complete': progressComplete.current,
             },
           )}
           ref={trackRef}

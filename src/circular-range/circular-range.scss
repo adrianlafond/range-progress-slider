@@ -50,6 +50,10 @@
     stroke-width: 1px;
     fill: white;
 
+    &--complete {
+      stroke: $track-progress-color;
+    }
+
     &--0 {
       fill: red;
     }
