@@ -85,14 +85,6 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   // each mouse move.
   // TODO: fire an onChange event because the default mousedown event is
   // default prevented!
-  function onMouseMove(event: MouseEvent) {
-    onPointerMove(event);
-  }
-
-  function onTouchMove(event: TouchEvent) {
-    onPointerMove(event);
-  }
-
   function onPointerMove(event: MouseEvent | TouchEvent) {
     const value = getValueFromMouse(getValueFromMouseParams(event));
     updateInput(value);
@@ -104,26 +96,20 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
     }
   }
 
-  function listenForMouseMove() {
+  function registerForPointerMove(add = true) {
+    const fn = add ? window.addEventListener : window.removeEventListener;
     if (IS_TOUCH) {
-      window.addEventListener('touchmove', onTouchMove);
-      window.addEventListener('touchend', stopListeningForPointerMove);
-      window.addEventListener('touchcancel', stopListeningForPointerMove);
+      fn('touchmove', onPointerMove);
+      fn('touchend', stopListeningForPointerMove);
+      fn('touchcancel', stopListeningForPointerMove);
     } else {
-      window.addEventListener('mousemove', onMouseMove);
-      window.addEventListener('mouseup', stopListeningForPointerMove);
+      fn('mousemove', onPointerMove);
+      fn('mouseup', stopListeningForPointerMove);
     }
   }
 
   function stopListeningForPointerMove() {
-    if (IS_TOUCH) {
-      window.removeEventListener('touchmove', onTouchMove);
-      window.removeEventListener('touchend', stopListeningForPointerMove);
-      window.removeEventListener('touchcancel', stopListeningForPointerMove);
-    } else {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', stopListeningForPointerMove);
-    }
+    registerForPointerMove(false);
   }
 
   React.useEffect(stopListeningForPointerMove);
@@ -284,7 +270,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
 
     const value = getValueFromMouse(getValueFromMouseParams(event.nativeEvent));
     updateInput(value);
-    listenForMouseMove();
+    registerForPointerMove();
 
     // Because the default is prevented, the input must be focussed manually.
     (event.target as HTMLInputElement).focus();
