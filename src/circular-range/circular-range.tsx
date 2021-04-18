@@ -11,7 +11,8 @@ import {
 import {
   normalizeZeroAtDegrees,
   getCenterCoordinates,
-  getValueFromMouse,
+  getRadiansForPercent,
+  getValueFromPointer,
   MouseTouchEvent
 } from './utils';
 import './circular-range.scss';
@@ -86,7 +87,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   // TODO: fire an onChange event because the default mousedown event is
   // default prevented!
   function onPointerMove(event: MouseEvent | TouchEvent) {
-    const value = getValueFromMouse(getValueFromMouseParams(event));
+    const value = getValueFromPointer(getValueFromPointerParams(event));
     updateInput(value);
     if (multiple) {
       updateMultipleInputs();
@@ -114,20 +115,14 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
 
   React.useEffect(stopListeningForPointerMove);
 
-  const getRadiansForPercent = React.useCallback((percent: number) => {
-    // Convert percent to radians and offset by zeroAtRadians.
-    let radians = percent * (Math.PI * 2);
-    if (props.counterClockwise) {
-      radians = Math.PI * 2 - radians;
-    }
-    radians += zeroAtRadians;
-    return radians;
-  }, [props.counterClockwise, zeroAtRadians]);
-
   const updateSingleKnobPosition = React.useCallback((value: number) => {
     if (rangeProps && trackRef.current && progressRef.current && knobRef.current) {
       const percent = (value - rangeProps.min) / (rangeProps.max - rangeProps.min);
-      const radians = getRadiansForPercent(percent);
+      const radians = getRadiansForPercent({
+        percent,
+        zeroAtRadians,
+        counterClockwise: props.counterClockwise,
+      });
 
       // Calculate x,y where the range starts (min or, usually, zero).
       const pt1x = trackCenter + Math.cos(zeroAtRadians) * trackRadius;
@@ -157,15 +152,16 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       // setProgressComplete(percent >= 1);
       progressComplete.current = percent >= 1;
     }
-  }, [getRadiansForPercent, rangeProps, zeroAtRadians, props.counterClockwise, trackCenter]);
+  }, [rangeProps, zeroAtRadians, props.counterClockwise, trackCenter]);
 
   const updateMultipleKnobPositions = React.useCallback(() => {
     if (rangeProps && knobRef.current && knobRef2.current && multipleInputRef1.current && multipleInputRef2.current && progressRef.current) {
       const perc1 = (+multipleInputRef1.current.value - rangeProps.min) / (rangeProps.max - rangeProps.min);
       const perc2 = (+multipleInputRef2.current.value - rangeProps.min) / (rangeProps.max - rangeProps.min);
 
-      const radians1 = getRadiansForPercent(perc1);
-      const radians2 = getRadiansForPercent(perc2);
+      const counterClockwise = props.counterClockwise;
+      const radians1 = getRadiansForPercent({ percent: perc1, counterClockwise, zeroAtRadians });
+      const radians2 = getRadiansForPercent({ percent: perc2, counterClockwise, zeroAtRadians });
 
       // Calculate x,y for the first knob.
       const pt1x = trackCenter + Math.cos(radians1) * trackRadius;
@@ -196,7 +192,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
         `${pt2x} ${pt2y}`;
       progressRef.current.setAttribute('d', d);
     }
-  }, [getRadiansForPercent, rangeProps, trackCenter, props.counterClockwise]);
+  }, [rangeProps, trackCenter, props.counterClockwise, zeroAtRadians]);
 
   // Captures changes events from the primary input and updates knobs in response.
   // Only called in response to keyboard input because on mousedown the event's
@@ -268,7 +264,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
     // and the center; the input is updated to reflect this calculated value.
     event.preventDefault();
 
-    const value = getValueFromMouse(getValueFromMouseParams(event.nativeEvent));
+    const value = getValueFromPointer(getValueFromPointerParams(event.nativeEvent));
     updateInput(value);
     registerForPointerMove();
 
@@ -322,7 +318,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
     }
   }
 
-  function getValueFromMouseParams(event: MouseTouchEvent) {
+  function getValueFromPointerParams(event: MouseTouchEvent) {
     return {
       event,
       centerCoords: centerCoords.current,

@@ -24,11 +24,25 @@ export function getCenterCoordinates(el?: HTMLElement): [number, number] | undef
   }
 }
 
+export function getRadiansForPercent({ percent, counterClockwise, zeroAtRadians }: {
+  percent: number;
+  counterClockwise?: boolean;
+  zeroAtRadians: number;
+}) {
+  // Convert percent to radians and offset by zeroAtRadians.
+  let radians = percent * (Math.PI * 2);
+  if (counterClockwise) {
+    radians = Math.PI * 2 - radians;
+  }
+  radians += zeroAtRadians;
+  return radians;
+}
+
 /**
  * Converts the angle of the mouse from the center into a value between the
  * input's min and max.
  */
-export function getValueFromMouse({
+export function getValueFromPointer({
   event,
   centerCoords,
   min,
