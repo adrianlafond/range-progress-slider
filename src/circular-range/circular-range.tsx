@@ -8,14 +8,21 @@ import {
   RangeMultipleChangeEvent,
   COMPONENT,
 } from '../shared';
+import {
+  normalizeZeroAtDegrees,
+  getCenterCoordinates,
+  getValueFromMouse,
+} from './utils';
 import './circular-range.scss';
 
 export type { CircularRangeProps, SingleRangeProps, MultipleRangeProps, RangeMultipleChangeEvent } from '../shared';
 
 // TODO: clean up:
-// mouse -> getValueFromMouse() -> set knob positions
-// input keyboard               -> set knob positions
-// prop value                   -> set knob positions
+// mouse -> getValueFromMouse() -> calc knob positions -> useReducer
+// input keyboard               -> calc knob positions -> useReducer
+// prop value                   -> calc knob positions -> useReducer
+
+// TODO: use arc instead of circle for track
 
 const initialState: {
   disabled: boolean;
@@ -24,7 +31,8 @@ const initialState: {
   focussedKnob: number;
   knobTransform: string;
   knob2Transform?: string;
-  progressD: string;
+  trackArc: string;
+  progressArc: string;
 } = {
   disabled: false,
   complete: false,
@@ -32,7 +40,8 @@ const initialState: {
   focussedKnob: 0,
   knobTransform: '',
   knob2Transform: '',
-  progressD: '',
+  trackArc: '',
+  progressArc: '',
 };
 
 export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: CircularRangeProps) => {
@@ -64,79 +73,25 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
 
   // Ensures zeroAtDegrees is a value between 0 and 360.
   const { zeroAtDegrees, zeroAtRadians } = React.useMemo(() => {
-    const zeroProp = props.zeroAtDegrees != null ? props.zeroAtDegrees : 0;
-    const modulo360 = zeroProp % 360;
-    const degrees: number = modulo360 < 0 ? modulo360 + 360 : modulo360;
-
-    // Convert to radians while keeping 0 at 12:00.
-    const radians: number = degrees / 180 * Math.PI - Math.PI * 0.5;
-
-    return { zeroAtDegrees: degrees, zeroAtRadians: radians };
+    return normalizeZeroAtDegrees(props.zeroAtDegrees);
   }, [props.zeroAtDegrees]);
 
-  // Get the origin/center of the circular track in order to measure angles
-  // against it for the mouse and knobs.
-  function getOrigin() {
-    if (rootRef.current) {
-      const rootRect = rootRef.current.getBoundingClientRect();
-      return [rootRect.width / 2 + rootRect.x, rootRect.height / 2 + rootRect.y];
-    }
-    return null;
-  }
-
-  // Converts the angle of the mouse from the center into a value between the
-  // input's min and max.
-  function getValueFromMouse(event: MouseEvent | React.MouseEvent<HTMLInputElement>) {
-    const origin = getOrigin();
-    if (origin) {
-      const { min, max } = rangeProps;
-
-      // Get radians between mouse and center of track:
-      let radians = Math.atan2(event.clientY - origin[1], event.clientX - origin[0]);
-
-      // Set radians back to 0 or 12:00:
-      radians += Math.PI * 0.5;
-
-      if (radians < 0) {
-        // Ensure 0 <= radians <= 6.28:
-        radians += Math.PI * 2;
-      }
-
-      if (props.counterClockwise) {
-        // "Flip" the radians to get counter-clockwise values:
-        radians = Math.PI * 2 - radians;
-      }
-
-      // Convert the radians to a percent:
-      let percent = radians / (Math.PI * 2);
-
-      // Account for prop zeroAtDegrees:
-      percent -= (props.counterClockwise ? -1 : 1) * (zeroAtDegrees / 360);
-      percent %= 1;
-      if (percent < 0) {
-        percent += 1;
-      }
-
-      const value = min + percent * (max - min);
-      if (inputRef.current) {
-        const currentValue = +inputRef.current.value;
-        if (currentValue - value >= 50) {
-          return Math.min(currentValue, 100);
-        } else if (currentValue - value <= -50) {
-          return Math.max(currentValue, 0);
-        }
-      }
-      return value;
-    }
-    return 0;
-  }
+  const centerCoords = React.useRef<[number, number]>();
 
   // When mouse is pressed down, updates the input value and knob positions on
   // each mouse move.
   // TODO: fire an onChange event because the default mousedown event is
   // default prevented!
   function onMouseMove(event: MouseEvent) {
-    const value = getValueFromMouse(event);
+    const value = getValueFromMouse({
+      event,
+      centerCoords: centerCoords.current,
+      min: rangeProps.min,
+      max: rangeProps.max,
+      counterClockwise: !!props.counterClockwise,
+      zeroAtDegrees,
+      currentValue: inputRef.current ? +inputRef.current.value : 0/0,
+    });
     updateInput(value);
     if (multiple) {
       updateMultipleInputs();
@@ -297,7 +252,15 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
     // preventDefault because the value comes from the angle between the mouse
     // and the center; the input is updated to reflect this calculated value.
     event.preventDefault();
-    const value = getValueFromMouse(event);
+    const value = getValueFromMouse({
+      event: event.nativeEvent,
+      centerCoords: centerCoords.current,
+      min: rangeProps.min,
+      max: rangeProps.max,
+      counterClockwise: !!props.counterClockwise,
+      zeroAtDegrees,
+      currentValue: inputRef.current ? +inputRef.current.value : 0 / 0,
+    });
     updateInput(value);
     listenForMouseMove();
 
@@ -335,6 +298,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   // As soon as the root element is rendered, updates the hidden
   // inputs (for multiple) and the knob positions.
   function onRootRef(el: HTMLDivElement) {
+    centerCoords.current = getCenterCoordinates(el);
     if (!rootRef.current) {
       rootRef.current = el;
       if (multipleRangeProps) {
