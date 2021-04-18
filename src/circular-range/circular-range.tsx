@@ -12,6 +12,7 @@ import {
   normalizeZeroAtDegrees,
   getCenterCoordinates,
   getValueFromMouse,
+  MouseTouchEvent
 } from './utils';
 import './circular-range.scss';
 
@@ -43,6 +44,8 @@ const initialState: {
   trackArc: '',
   progressArc: '',
 };
+
+const IS_TOUCH = 'undefined' !== typeof window && 'ontouchstart' in window;
 
 export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: CircularRangeProps) => {
   const [focussed, setFocussed] = React.useState(false);
@@ -83,15 +86,15 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   // TODO: fire an onChange event because the default mousedown event is
   // default prevented!
   function onMouseMove(event: MouseEvent) {
-    const value = getValueFromMouse({
-      event,
-      centerCoords: centerCoords.current,
-      min: rangeProps.min,
-      max: rangeProps.max,
-      counterClockwise: !!props.counterClockwise,
-      zeroAtDegrees,
-      currentValue: inputRef.current ? +inputRef.current.value : 0/0,
-    });
+    onPointerMove(event);
+  }
+
+  function onTouchMove(event: TouchEvent) {
+    onPointerMove(event);
+  }
+
+  function onPointerMove(event: MouseEvent | TouchEvent) {
+    const value = getValueFromMouse(getValueFromMouseParams(event));
     updateInput(value);
     if (multiple) {
       updateMultipleInputs();
@@ -102,16 +105,28 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   }
 
   function listenForMouseMove() {
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', stopListeningForMouseMove);
+    if (IS_TOUCH) {
+      window.addEventListener('touchmove', onTouchMove);
+      window.addEventListener('touchend', stopListeningForPointerMove);
+      window.addEventListener('touchcancel', stopListeningForPointerMove);
+    } else {
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', stopListeningForPointerMove);
+    }
   }
 
-  function stopListeningForMouseMove() {
-    window.removeEventListener('mousemove', onMouseMove);
-    window.removeEventListener('mouseup', stopListeningForMouseMove);
+  function stopListeningForPointerMove() {
+    if (IS_TOUCH) {
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', stopListeningForPointerMove);
+      window.removeEventListener('touchcancel', stopListeningForPointerMove);
+    } else {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', stopListeningForPointerMove);
+    }
   }
 
-  React.useEffect(stopListeningForMouseMove);
+  React.useEffect(stopListeningForPointerMove);
 
   const getRadiansForPercent = React.useCallback((percent: number) => {
     // Convert percent to radians and offset by zeroAtRadians.
@@ -249,18 +264,25 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   // Begins listening to mouse movement to determine angle between the mouse and
   // the center/origin and thus the "dragging" value.
   function onInternalMouseDown(event: React.MouseEvent<HTMLInputElement>) {
+    onPointerDown(event);
+    if (props.onMouseDown) {
+      props.onMouseDown(event);
+    }
+  }
+
+  function onInternalTouchStart(event: React.TouchEvent<HTMLInputElement>) {
+    onPointerDown(event);
+    if (props.onTouchStart) {
+      props.onTouchStart(event);
+    }
+  }
+
+  function onPointerDown(event: React.MouseEvent<HTMLInputElement> | React.TouchEvent<HTMLInputElement>) {
     // preventDefault because the value comes from the angle between the mouse
     // and the center; the input is updated to reflect this calculated value.
     event.preventDefault();
-    const value = getValueFromMouse({
-      event: event.nativeEvent,
-      centerCoords: centerCoords.current,
-      min: rangeProps.min,
-      max: rangeProps.max,
-      counterClockwise: !!props.counterClockwise,
-      zeroAtDegrees,
-      currentValue: inputRef.current ? +inputRef.current.value : 0 / 0,
-    });
+
+    const value = getValueFromMouse(getValueFromMouseParams(event.nativeEvent));
     updateInput(value);
     listenForMouseMove();
 
@@ -275,9 +297,6 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       updateMultipleKnobPositions();
     } else {
       updateSingleKnobPosition(value);
-    }
-    if (props.onMouseDown) {
-      props.onMouseDown(event);
     }
   }
 
@@ -315,6 +334,18 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
         updateSingleKnobPosition(singleRangeProps.value);
       }
     }
+  }
+
+  function getValueFromMouseParams(event: MouseTouchEvent) {
+    return {
+      event,
+      centerCoords: centerCoords.current,
+      min: rangeProps.min,
+      max: rangeProps.max,
+      counterClockwise: !!props.counterClockwise,
+      zeroAtDegrees,
+      currentValue: inputRef.current ? +inputRef.current.value : 0 / 0,
+    };
   }
 
   // Syncs the primary `<input>`'s value to the component's value.
@@ -444,7 +475,8 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
         onChange={onInternalChange}
         onFocus={onInternalFocus}
         onBlur={onInternalBlur}
-        onMouseDown={onInternalMouseDown}
+        onMouseDown={!IS_TOUCH ? onInternalMouseDown : undefined}
+        onTouchStart={IS_TOUCH ? onInternalTouchStart : undefined}
         onKeyDown={onInternalKeyDown}
         data-testid={`${COMPONENT}__input`}
       />

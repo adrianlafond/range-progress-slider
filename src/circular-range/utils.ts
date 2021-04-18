@@ -1,5 +1,3 @@
-import React, { TouchEvent } from "react";
-
 /**
  * Normalizes the zeroAtDegrees prop and returns the value converted to a number
  * between 0 and 360 and also and also converted to radians.
@@ -39,7 +37,7 @@ export function getValueFromMouse({
   zeroAtDegrees,
   currentValue,
 }: {
-  event: MouseEvent | TouchEvent;
+  event: MouseTouchEvent
   centerCoords?: [number, number];
   min: number;
   max: number;
@@ -91,9 +89,15 @@ export function getValueFromMouse({
   return 0;
 }
 
-function getClientCoordinates(event: MouseEvent | TouchEvent) {
-  if ('touches' in event) {
+export interface MouseTouchEvent {
+  touches?: TouchList;
+  clientX?: number;
+  clientY?: number;
+}
+
+function getClientCoordinates(event: MouseTouchEvent) {
+  if (event.touches) {
     return { clientX: event.touches[0].clientX, clientY: event.touches[0].clientY };
   }
-  return { clientX: event.clientX, clientY: event.clientY };
+  return { clientX: event.clientX || 0, clientY: event.clientY || 0 };
 }
