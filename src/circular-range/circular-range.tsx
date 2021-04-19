@@ -11,7 +11,9 @@ import {
 import {
   normalizeZeroAtDegrees,
   getCenterCoordinates,
+  getPercentForValue,
   getRadiansForPercent,
+  getKnobTransform,
   getValueFromPointer,
   MouseTouchEvent
 } from './utils';
@@ -31,13 +33,6 @@ const IS_TOUCH = 'undefined' !== typeof window && 'ontouchstart' in window;
 export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: CircularRangeProps) => {
   const [focussed, setFocussed] = React.useState(false);
   const [focussedKnob, setFocussedKnob] = React.useState<0 | 1>(0);
-  const [state, setState] = React.useState({
-    complete: false,
-    knobTransform: '',
-    knob2Transform: '',
-    trackArc: '',
-    progressArc: '',
-  });
 
   // const [progressComplete, setProgressComplete] = React.useState(false);
   const progressComplete = React.useRef(false);
@@ -52,6 +47,30 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   const singleRangeProps: Required<SingleRangeProps> | null = multiple ? null : rangeProps as Required<SingleRangeProps>;
   const multipleRangeProps: Required<MultipleRangeProps> | null = multiple ? rangeProps as Required<MultipleRangeProps> : null;
 
+  // Ensures zeroAtDegrees is a value between 0 and 360.
+  const { zeroAtDegrees, zeroAtRadians } = React.useMemo(() => {
+    return normalizeZeroAtDegrees(rangeProps.zeroAtDegrees);
+  }, [rangeProps.zeroAtDegrees]);
+
+  const [state, setState] = React.useState((() => {
+    const value = singleRangeProps ? [singleRangeProps.value, 0]
+      : multipleRangeProps ? multipleRangeProps.value : [0, 0];
+    const percent1 = getPercentForValue(value[0], rangeProps);
+    const radians1 =
+      getRadiansForPercent({ percent: percent1, counterClockwise: props.counterClockwise, zeroAtRadians });
+    const percent2 = multiple ? getPercentForValue(value[1], rangeProps) : 0;
+    const radians2 = multiple ?
+      getRadiansForPercent({ percent: percent2, counterClockwise: props.counterClockwise, zeroAtRadians }) : 0;
+    return {
+      value,
+      complete: percent1 >= 1,
+      knobTransform: getKnobTransform({ center: trackCenter, radius: trackRadius, radians: radians1 }),
+      knob2Transform: multiple ? getKnobTransform({ center: trackCenter, radius: trackRadius, radians: radians2 }) : 0,
+      trackArc: '',
+      progressArc: '',
+    };
+  })());
+
   const rootRef = React.useRef<HTMLDivElement>();
   const trackRef = React.useRef<SVGCircleElement>(null);
   const progressRef = React.useRef<SVGPathElement>(null);
@@ -63,11 +82,6 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
 
   const isControlled = React.useCallback(() => props.value != null, [props.value]);
 
-  // Ensures zeroAtDegrees is a value between 0 and 360.
-  const { zeroAtDegrees, zeroAtRadians } = React.useMemo(() => {
-    return normalizeZeroAtDegrees(props.zeroAtDegrees);
-  }, [props.zeroAtDegrees]);
-
   const centerCoords = React.useRef<[number, number]>();
 
   // When mouse is pressed down, updates the input value and knob positions on
@@ -76,12 +90,17 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   // default prevented!
   function onPointerMove(event: MouseEvent | TouchEvent) {
     const value = getValueFromPointer(getValueFromPointerParams(event));
-    updateInputs(value);
-    if (multiple) {
-      updateMultipleInputs();
-      updateMultipleKnobPositions();
+    // updateInputs(value);
+    // if (multiple) {
+    //   // updateMultipleInputs();
+    //   updateMultipleKnobPositions();
+    // } else {
+    //   updateSingleKnobPosition();
+    // }
+    if (isControlled()) {
+      //
     } else {
-      updateSingleKnobPosition();
+      updateKnobPositions([value, state.value[1]]);
     }
   }
 
@@ -103,9 +122,9 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
 
   React.useEffect(stopListeningForPointerMove);
 
-  const updateSingleKnobPosition = React.useCallback(() => {
+  const updateSingleKnobPosition = React.useCallback((value: number) => {
     if (rangeProps && inputRef.current && trackRef.current && progressRef.current && knobRef.current) {
-      const value = +inputRef.current.value;
+      // const value = +inputRef.current.value;
       const percent = (value - rangeProps.min) / (rangeProps.max - rangeProps.min);
       const radians = getRadiansForPercent({
         percent,
@@ -120,10 +139,16 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       // Calculate x,y for the knob (or where the range extends to).
       const knobX = trackCenter + Math.cos(radians) * trackRadius;
       const knobY = trackCenter + Math.sin(radians) * trackRadius;
-      knobRef.current.style.transform = `translate(
-        ${knobX}px,
-        ${knobY}px
-      ) rotate(${radians + Math.PI * 0.5}rad)`;
+      // knobRef.current.style.transform = `translate(
+      // const knobTransform = `translate(
+      //   ${knobX}px,
+      //   ${knobY}px
+      // ) rotate(${radians + Math.PI * 0.5}rad)`;
+      const knobTransform = getKnobTransform({
+        center: trackCenter,
+        radius: trackRadius,
+        radians,
+      });
 
       // Calculate large arc and sweep values to draw the arc.
       const radiansOffset = radians - zeroAtRadians;
@@ -136,14 +161,21 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       const d = `M ${pt1x} ${pt1y} ` +
         `A ${trackRadius} ${trackRadius} 0 ${largeArc} ${sweep} ` +
         `${knobX} ${knobY}`;
-      progressRef.current.setAttribute('d', d);
+      // progressRef.current.setAttribute('d', d);
 
       // setProgressComplete(percent >= 1);
-      progressComplete.current = percent >= 1;
-    }
-  }, [rangeProps, zeroAtRadians, props.counterClockwise, trackCenter]);
+      // progressComplete.current = percent >= 1;
 
-  const updateMultipleKnobPositions = React.useCallback(() => {
+      return {
+        ...state,
+        knobTransform,
+        complete: percent >= 1,
+        value: [value, state.value[1]],
+      };
+    }
+  }, [rangeProps, zeroAtRadians, props.counterClockwise, trackCenter, state]);
+
+  const updateMultipleKnobPositions = React.useCallback((value = [0, 0]) => {
     if (rangeProps && knobRef.current && knobRef2.current && multipleInputRef1.current && multipleInputRef2.current && progressRef.current) {
       const perc1 = (+multipleInputRef1.current.value - rangeProps.min) / (rangeProps.max - rangeProps.min);
       const perc2 = (+multipleInputRef2.current.value - rangeProps.min) / (rangeProps.max - rangeProps.min);
@@ -155,7 +187,8 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       // Calculate x,y for the first knob.
       const pt1x = trackCenter + Math.cos(radians1) * trackRadius;
       const pt1y = trackCenter + Math.sin(radians1) * trackRadius;
-      knobRef.current.style.transform = `translate(
+      // knobRef.current.style.transform = `translate(
+      const knobTransform = `translate(
         ${pt1x}px,
         ${pt1y}px
       ) rotate(${radians1 + Math.PI * 0.5}rad)`;
@@ -163,7 +196,8 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       // Calculate x,y for the first knob.
       const pt2x = trackCenter + Math.cos(radians2) * trackRadius;
       const pt2y = trackCenter + Math.sin(radians2) * trackRadius;
-      knobRef2.current.style.transform = `translate(
+      // knobRef2.current.style.transform = `translate(
+      const knob2Transform = `translate(
         ${pt2x}px,
         ${pt2y}px
       ) rotate(${radians2 + Math.PI * 0.5}rad)`;
@@ -180,14 +214,23 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
         `A ${trackRadius} ${trackRadius} 0 ${largeArc} ${sweep} ` +
         `${pt2x} ${pt2y}`;
       progressRef.current.setAttribute('d', d);
-    }
-  }, [rangeProps, trackCenter, props.counterClockwise, zeroAtRadians]);
 
-  const updateKnobPositions = React.useCallback(() => {
+      return {
+        ...state,
+        knobTransform,
+        knob2Transform,
+        value: [value, state.value[1]],
+      };
+    }
+  }, [rangeProps, trackCenter, props.counterClockwise, zeroAtRadians, state]);
+
+  const updateKnobPositions = React.useCallback((value = [0, 0]) => {
     if (multiple) {
-      updateMultipleKnobPositions();
-    } else {
-      updateSingleKnobPosition();
+      return updateMultipleKnobPositions(value);
+    }
+    const nextState = updateSingleKnobPosition(value[0]);
+    if (nextState) {
+      setState(nextState);
     }
   }, [multiple, updateSingleKnobPosition, updateMultipleKnobPositions]);
 
@@ -210,12 +253,13 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       multipleRangeProps.onChange(multipleEvent);
     }
 
-    if (!isControlled()) {
-      if (multiple) {
-        updateMultipleInputs();
-      }
-      updateKnobPositions();
-    }
+    // if (!isControlled()) {
+    //   if (multiple) {
+    //     updateMultipleInputs();
+    //   }
+    //   updateKnobPositions();
+    // }
+    updateKnobPositions();
   }
 
   // When the primary input is focussed or blurred, sets the focussed state for
@@ -266,8 +310,8 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       setFocussedKnob(nextFocussedKnob);
     }
 
-    const value = getValueFromPointer(getValueFromPointerParams(event.nativeEvent));
-    updateInputs(value);
+    // const value = getValueFromPointer(getValueFromPointerParams(event.nativeEvent));
+    // updateInputs(value);
     updateKnobPositions();
     registerForPointerMove();
   }
@@ -278,7 +322,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   function onInternalKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (multiple && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
       event.preventDefault();
-      updateInputs(focussedKnob === 0 ? +multipleInputRef2.current!.value : +multipleInputRef1.current!.value);
+      // updateInputs(focussedKnob === 0 ? +multipleInputRef2.current!.value : +multipleInputRef1.current!.value);
       setFocussedKnob(focussedKnob === 0 ? 1 : 0);
     }
     if (props.onKeyDown) {
@@ -292,19 +336,19 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
     centerCoords.current = getCenterCoordinates(el);
     if (!rootRef.current) {
       rootRef.current = el;
-      if (multipleRangeProps) {
-        if (inputRef.current) {
-          inputRef.current.value = `${(rangeProps as MultipleRangeProps).value![focussedKnob]}`;
-        }
-        if (multipleInputRef1.current) {
-          multipleInputRef1.current.value = `${multipleRangeProps.value[0]}`;
-        }
-        if (multipleInputRef2.current) {
-          multipleInputRef2.current.value = `${multipleRangeProps.value[1]}`;
-        }
-      } else if (singleRangeProps) {
-        updateInputs(singleRangeProps.value);
-      }
+      // if (multipleRangeProps) {
+      //   if (inputRef.current) {
+      //     inputRef.current.value = `${(rangeProps as MultipleRangeProps).value![focussedKnob]}`;
+      //   }
+      //   if (multipleInputRef1.current) {
+      //     multipleInputRef1.current.value = `${multipleRangeProps.value[0]}`;
+      //   }
+      //   if (multipleInputRef2.current) {
+      //     multipleInputRef2.current.value = `${multipleRangeProps.value[1]}`;
+      //   }
+      // } else if (singleRangeProps) {
+      //   updateInputs(singleRangeProps.value);
+      // }
       updateKnobPositions();
     }
   }
@@ -324,34 +368,34 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   // For form data, two hidden inputs represent the two values of multiple mode.
   // Here the input that represents the active value is synced with the primary
   // input's value.
-  const updateMultipleInputs = React.useCallback(() => {
-    if (multiple && inputRef.current) {
-      const targetValue = inputRef.current.value;
-      if (multipleInputRef1.current && multipleInputRef2.current) {
-        multipleInputRef1.current.value = focussedKnob === 0 ? targetValue : `${Math.min(+multipleInputRef1.current.value, +targetValue)}`;
-        multipleInputRef2.current.value = focussedKnob === 1 ? targetValue : `${Math.max(+multipleInputRef2.current.value, +targetValue)}`;
-      }
-    }
-  }, [focussedKnob, multiple]);
+  // const updateMultipleInputs = React.useCallback(() => {
+  //   if (multiple && inputRef.current) {
+  //     const targetValue = inputRef.current.value;
+  //     if (multipleInputRef1.current && multipleInputRef2.current) {
+  //       // multipleInputRef1.current.value = focussedKnob === 0 ? targetValue : `${Math.min(+multipleInputRef1.current.value, +targetValue)}`;
+  //       // multipleInputRef2.current.value = focussedKnob === 1 ? targetValue : `${Math.max(+multipleInputRef2.current.value, +targetValue)}`;
+  //     }
+  //   }
+  // }, [focussedKnob, multiple]);
 
   // Syncs the primary `<input>`'s value to the component's value.
-  const updateInputs = React.useCallback((value: number) => {
-    if (inputRef.current) {
-      inputRef.current.value = `${value}`;
-      updateMultipleInputs();
-    }
-  }, [updateMultipleInputs]);
+  // const updateInputs = React.useCallback((value: number) => {
+  //   if (inputRef.current) {
+  //     // inputRef.current.value = `${value}`;
+  //     updateMultipleInputs();
+  //   }
+  // }, [updateMultipleInputs]);
 
   // When the component is controlled (ie, props.value is defined), then the
   // inputs and knob positions are updated when props.value is updated.
-  React.useEffect(() => {
-    if (multipleRangeProps) {
-      updateInputs(multipleRangeProps.value[focussedKnob]);
-    } else if (singleRangeProps) {
-      updateInputs(singleRangeProps.value);
-    }
-    updateKnobPositions();
-  }, [focussedKnob, multipleRangeProps, singleRangeProps, updateInputs, updateKnobPositions, props.value]);
+  // React.useEffect(() => {
+  //   if (multipleRangeProps) {
+  //     updateInputs(multipleRangeProps.value[focussedKnob]);
+  //   } else if (singleRangeProps) {
+  //     updateInputs(singleRangeProps.value);
+  //   }
+  //   updateKnobPositions();
+  // }, [focussedKnob, multipleRangeProps, singleRangeProps, updateInputs, updateKnobPositions, props.value]);
 
   return (
     <div
@@ -396,6 +440,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
             'circular-range__knob--disabled': rangeProps.disabled,
           }
           )}
+          style={{ transform: state.knobTransform }}
           ref={knobRef}
         />
       {multiple && (
@@ -420,11 +465,13 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
           <input
             type="hidden"
             name={rangeProps.name || undefined}
+            value={state.value[0]}
             ref={multipleInputRef1}
            />
           <input
             type="hidden"
             name={(rangeProps as MultipleRangeProps).name2 || undefined}
+            value={state.value[1]}
             ref={multipleInputRef2}
            />
         </>
@@ -439,6 +486,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
         type="range"
         ref={inputRef}
         className="circular-range__input"
+        value={multiple ? state.value[focussedKnob] : state.value[0]}
         onChange={onInternalChange}
         onFocus={onInternalFocus}
         onBlur={onInternalBlur}

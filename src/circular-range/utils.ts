@@ -24,6 +24,14 @@ export function getCenterCoordinates(el?: HTMLElement): [number, number] | undef
   }
 }
 
+/**
+ * Given a value, min, and max, returns the percent of the value relative to the
+ * min and the max.
+ */
+export function getPercentForValue(value: number, { min, max }: { min: number, max: number }) {
+  return (value - min) / (max - min);
+}
+
 export function getRadiansForPercent({ percent, counterClockwise, zeroAtRadians }: {
   percent: number;
   counterClockwise?: boolean;
@@ -36,6 +44,24 @@ export function getRadiansForPercent({ percent, counterClockwise, zeroAtRadians 
   }
   radians += zeroAtRadians;
   return radians;
+}
+
+/**
+ * Given a center (x and y is assumed to be the same) and a radius for a track
+ * and the radians of a knob, returns a CSS transform value that can be applied
+ * via an inline style.
+ */
+export function getKnobTransform({ center, radius, radians }: {
+  center: number;
+  radius: number;
+  radians: number;
+}) {
+  const pt1x = center + Math.cos(radians) * radius;
+  const pt1y = center + Math.sin(radians) * radius;
+  return `translate(
+      ${pt1x}px,
+      ${pt1y}px
+    ) rotate(${radians + Math.PI * 0.5}rad)`;
 }
 
 /**
