@@ -65,7 +65,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       value,
       complete: percent1 >= 1,
       knobTransform: getKnobTransform({ center: trackCenter, radius: trackRadius, radians: radians1 }),
-      knob2Transform: multiple ? getKnobTransform({ center: trackCenter, radius: trackRadius, radians: radians2 }) : 0,
+      knob2Transform: multiple ? getKnobTransform({ center: trackCenter, radius: trackRadius, radians: radians2 }) : '',
       trackArc: '',
       progressArc: '',
     };
@@ -90,13 +90,6 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   // default prevented!
   function onPointerMove(event: MouseEvent | TouchEvent) {
     const value = getValueFromPointer(getValueFromPointerParams(event));
-    // updateInputs(value);
-    // if (multiple) {
-    //   // updateMultipleInputs();
-    //   updateMultipleKnobPositions();
-    // } else {
-    //   updateSingleKnobPosition();
-    // }
     if (isControlled()) {
       //
     } else {
@@ -139,11 +132,6 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       // Calculate x,y for the knob (or where the range extends to).
       const knobX = trackCenter + Math.cos(radians) * trackRadius;
       const knobY = trackCenter + Math.sin(radians) * trackRadius;
-      // knobRef.current.style.transform = `translate(
-      // const knobTransform = `translate(
-      //   ${knobX}px,
-      //   ${knobY}px
-      // ) rotate(${radians + Math.PI * 0.5}rad)`;
       const knobTransform = getKnobTransform({
         center: trackCenter,
         radius: trackRadius,
@@ -158,17 +146,14 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       const sweep = props.counterClockwise ? 0 : 1;
 
       // Update the "d" attribute of the path to draw the arc.
-      const d = `M ${pt1x} ${pt1y} ` +
+      const progressArc = `M ${pt1x} ${pt1y} ` +
         `A ${trackRadius} ${trackRadius} 0 ${largeArc} ${sweep} ` +
         `${knobX} ${knobY}`;
-      // progressRef.current.setAttribute('d', d);
-
-      // setProgressComplete(percent >= 1);
-      // progressComplete.current = percent >= 1;
 
       return {
         ...state,
         knobTransform,
+        progressArc,
         complete: percent >= 1,
         value: [value, state.value[1]],
       };
@@ -177,8 +162,8 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
 
   const updateMultipleKnobPositions = React.useCallback((value = [0, 0]) => {
     if (rangeProps && knobRef.current && knobRef2.current && multipleInputRef1.current && multipleInputRef2.current && progressRef.current) {
-      const perc1 = (+multipleInputRef1.current.value - rangeProps.min) / (rangeProps.max - rangeProps.min);
-      const perc2 = (+multipleInputRef2.current.value - rangeProps.min) / (rangeProps.max - rangeProps.min);
+      const perc1 = (value[0] - rangeProps.min) / (rangeProps.max - rangeProps.min);
+      const perc2 = (value[1] - rangeProps.min) / (rangeProps.max - rangeProps.min);
 
       const counterClockwise = props.counterClockwise;
       const radians1 = getRadiansForPercent({ percent: perc1, counterClockwise, zeroAtRadians });
@@ -187,48 +172,52 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       // Calculate x,y for the first knob.
       const pt1x = trackCenter + Math.cos(radians1) * trackRadius;
       const pt1y = trackCenter + Math.sin(radians1) * trackRadius;
-      // knobRef.current.style.transform = `translate(
-      const knobTransform = `translate(
-        ${pt1x}px,
-        ${pt1y}px
-      ) rotate(${radians1 + Math.PI * 0.5}rad)`;
+      const knobTransform = getKnobTransform({
+        center: trackCenter,
+        radius: trackRadius,
+        radians: radians1,
+      });
 
       // Calculate x,y for the first knob.
       const pt2x = trackCenter + Math.cos(radians2) * trackRadius;
       const pt2y = trackCenter + Math.sin(radians2) * trackRadius;
-      // knobRef2.current.style.transform = `translate(
-      const knob2Transform = `translate(
-        ${pt2x}px,
-        ${pt2y}px
-      ) rotate(${radians2 + Math.PI * 0.5}rad)`;
+      const knob2Transform = getKnobTransform({
+        center: trackCenter,
+        radius: trackRadius,
+        radians: radians2,
+      });
 
       // Calculate large arc and sweep values to draw the arc.
       const radiansDelta = radians2 - radians1;
-      const largeArc = props.counterClockwise
-        ? (radiansDelta > -Math.PI ? 0 : 1)
-        : (radiansDelta < Math.PI ? 0 : 1);
-      const sweep = props.counterClockwise ? 0 : 1;
+      // const largeArc = 1;
+      const largeArc =  props.counterClockwise
+        ? (radiansDelta > Math.PI ? 1 : 0)
+        : (radiansDelta < -Math.PI ? 1 : 0);
+      console.log(largeArc, radiansDelta);
+      const sweep = props.counterClockwise ? 1 : 0;
 
       // Update the "d" attribute of the path to draw the arc.
-      const d = `M ${pt1x} ${pt1y} ` +
+      const progressArc = `M ${pt1x} ${pt1y} ` +
         `A ${trackRadius} ${trackRadius} 0 ${largeArc} ${sweep} ` +
         `${pt2x} ${pt2y}`;
-      progressRef.current.setAttribute('d', d);
 
       return {
         ...state,
         knobTransform,
         knob2Transform,
-        value: [value, state.value[1]],
+        progressArc,
+        value: [
+          focussedKnob === 0 ? value : value[0],
+          focussedKnob === 1 ? value : value[1],
+        ],
       };
     }
-  }, [rangeProps, trackCenter, props.counterClockwise, zeroAtRadians, state]);
+  }, [focussedKnob, rangeProps, trackCenter, props.counterClockwise, zeroAtRadians, state]);
 
   const updateKnobPositions = React.useCallback((value = [0, 0]) => {
-    if (multiple) {
-      return updateMultipleKnobPositions(value);
-    }
-    const nextState = updateSingleKnobPosition(value[0]);
+    const nextState = multiple
+      ? updateMultipleKnobPositions(value)
+      : updateSingleKnobPosition(value[0]);
     if (nextState) {
       setState(nextState);
     }
@@ -253,12 +242,6 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       multipleRangeProps.onChange(multipleEvent);
     }
 
-    // if (!isControlled()) {
-    //   if (multiple) {
-    //     updateMultipleInputs();
-    //   }
-    //   updateKnobPositions();
-    // }
     updateKnobPositions();
   }
 
@@ -336,19 +319,6 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
     centerCoords.current = getCenterCoordinates(el);
     if (!rootRef.current) {
       rootRef.current = el;
-      // if (multipleRangeProps) {
-      //   if (inputRef.current) {
-      //     inputRef.current.value = `${(rangeProps as MultipleRangeProps).value![focussedKnob]}`;
-      //   }
-      //   if (multipleInputRef1.current) {
-      //     multipleInputRef1.current.value = `${multipleRangeProps.value[0]}`;
-      //   }
-      //   if (multipleInputRef2.current) {
-      //     multipleInputRef2.current.value = `${multipleRangeProps.value[1]}`;
-      //   }
-      // } else if (singleRangeProps) {
-      //   updateInputs(singleRangeProps.value);
-      // }
       updateKnobPositions();
     }
   }
@@ -425,11 +395,11 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
               'circular-range__track-progress--disabled': rangeProps.disabled,
             },
           )}
-          d=""
+          d={state.progressArc}
           ref={progressRef}
         />
         <ellipse
-          cx={multiple ? (props.counterClockwise ? 4 : -4) : 0}
+          cx={multiple ? (props.counterClockwise ? -4 : 4) : 0}
           cy={0}
           rx={4}
           ry={8}
@@ -445,7 +415,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
         />
       {multiple && (
         <ellipse
-          cx={props.counterClockwise ? -4 : 4}
+          cx={props.counterClockwise ? 4 : -4}
           cy={0}
           rx={4}
           ry={8}
@@ -456,6 +426,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
               'circular-range__knob--disabled': rangeProps.disabled,
             }
           )}
+          style={{ transform: state.knob2Transform }}
           ref={knobRef2}
         />
       )}
