@@ -18,6 +18,7 @@ import {
   MouseTouchEvent
 } from './utils';
 import './circular-range.scss';
+import classNames from 'classnames';
 
 export type { CircularRangeProps, SingleRangeProps, MultipleRangeProps, RangeMultipleChangeEvent } from '../shared';
 
@@ -33,9 +34,6 @@ const IS_TOUCH = 'undefined' !== typeof window && 'ontouchstart' in window;
 export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: CircularRangeProps) => {
   const [focussed, setFocussed] = React.useState(false);
   const [focussedKnob, setFocussedKnob] = React.useState<0 | 1>(0);
-
-  // const [progressComplete, setProgressComplete] = React.useState(false);
-  const progressComplete = React.useRef(false);
 
   const { multiple, rangeProps, dataProps, otherProps } = processCircularRangeProps(props, focussedKnob);
 
@@ -63,17 +61,13 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       getRadiansForPercent({ percent: percent2, counterClockwise: props.counterClockwise, zeroAtRadians }) : 0;
     return {
       value,
-      complete: percent1 >= 1,
       knobTransform: getKnobTransform({ center: trackCenter, radius: trackRadius, radians: radians1 }),
       knob2Transform: multiple ? getKnobTransform({ center: trackCenter, radius: trackRadius, radians: radians2 }) : '',
-      trackArc: '',
       progressArc: '',
     };
   })());
 
   const rootRef = React.useRef<HTMLDivElement>();
-  const trackRef = React.useRef<SVGCircleElement>(null);
-  const progressRef = React.useRef<SVGPathElement>(null);
   const knobRef = React.useRef<SVGEllipseElement>(null);
   const knobRef2 = React.useRef<SVGEllipseElement>(null);
   const multipleInputRef1 = React.useRef<HTMLInputElement>(null);
@@ -115,9 +109,32 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
 
   React.useEffect(stopListeningForPointerMove);
 
+  const trackArc = React.useMemo(() => {
+    // TODO: ensure maxDegrees > minDegrees
+    const minDeg = rangeProps.minDegrees + zeroAtDegrees % 360;
+    const maxDeg = rangeProps.maxDegrees + zeroAtDegrees % 360;
+    // const deltaDeg = maxDeg - minDeg;
+
+    const minRadians = minDeg / 180 * Math.PI - Math.PI * 0.5;
+    const maxRadians = maxDeg / 180 * Math.PI - Math.PI * 0.5;
+    console.log(zeroAtDegrees, minDeg, maxDeg);
+
+    const pt1x = trackCenter + Math.cos(minRadians) * trackRadius;
+    const pt1y = trackCenter + Math.sin(minRadians) * trackRadius;
+
+    const pt2x = trackCenter + Math.cos(maxRadians) * trackRadius;
+    const pt2y = trackCenter + Math.sin(maxRadians) * trackRadius;
+
+    const largeArc = 1;
+    const sweep = 1;
+
+    return `M ${pt1x} ${pt1y} ` +
+      `A ${trackRadius} ${trackRadius} 0 ${largeArc} ${sweep} ` +
+      `${pt2x} ${pt2y}`;
+  }, [trackCenter, trackRadius, zeroAtRadians, rangeProps.minDegrees, rangeProps.maxDegrees]);
+
   const updateSingleKnobPosition = React.useCallback((value: number) => {
-    if (rangeProps && inputRef.current && trackRef.current && progressRef.current && knobRef.current) {
-      // const value = +inputRef.current.value;
+    if (rangeProps && inputRef.current && knobRef.current) {
       const percent = (value - rangeProps.min) / (rangeProps.max - rangeProps.min);
       const radians = getRadiansForPercent({
         percent,
@@ -161,7 +178,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   }, [rangeProps, zeroAtRadians, props.counterClockwise, trackCenter, state]);
 
   const updateMultipleKnobPositions = React.useCallback((value = [0, 0]) => {
-    if (rangeProps && knobRef.current && knobRef2.current && multipleInputRef1.current && multipleInputRef2.current && progressRef.current) {
+    if (rangeProps && knobRef.current && knobRef2.current && multipleInputRef1.current && multipleInputRef2.current) {
       const perc1 = (value[0] - rangeProps.min) / (rangeProps.max - rangeProps.min);
       const perc2 = (value[1] - rangeProps.min) / (rangeProps.max - rangeProps.min);
 
@@ -193,7 +210,6 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       const largeArc =  props.counterClockwise
         ? (radiansDelta > Math.PI ? 1 : 0)
         : (radiansDelta < -Math.PI ? 1 : 0);
-      console.log(largeArc, radiansDelta);
       const sweep = props.counterClockwise ? 1 : 0;
 
       // Update the "d" attribute of the path to draw the arc.
@@ -335,38 +351,6 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
     };
   }
 
-  // For form data, two hidden inputs represent the two values of multiple mode.
-  // Here the input that represents the active value is synced with the primary
-  // input's value.
-  // const updateMultipleInputs = React.useCallback(() => {
-  //   if (multiple && inputRef.current) {
-  //     const targetValue = inputRef.current.value;
-  //     if (multipleInputRef1.current && multipleInputRef2.current) {
-  //       // multipleInputRef1.current.value = focussedKnob === 0 ? targetValue : `${Math.min(+multipleInputRef1.current.value, +targetValue)}`;
-  //       // multipleInputRef2.current.value = focussedKnob === 1 ? targetValue : `${Math.max(+multipleInputRef2.current.value, +targetValue)}`;
-  //     }
-  //   }
-  // }, [focussedKnob, multiple]);
-
-  // Syncs the primary `<input>`'s value to the component's value.
-  // const updateInputs = React.useCallback((value: number) => {
-  //   if (inputRef.current) {
-  //     // inputRef.current.value = `${value}`;
-  //     updateMultipleInputs();
-  //   }
-  // }, [updateMultipleInputs]);
-
-  // When the component is controlled (ie, props.value is defined), then the
-  // inputs and knob positions are updated when props.value is updated.
-  // React.useEffect(() => {
-  //   if (multipleRangeProps) {
-  //     updateInputs(multipleRangeProps.value[focussedKnob]);
-  //   } else if (singleRangeProps) {
-  //     updateInputs(singleRangeProps.value);
-  //   }
-  //   updateKnobPositions();
-  // }, [focussedKnob, multipleRangeProps, singleRangeProps, updateInputs, updateKnobPositions, props.value]);
-
   return (
     <div
       {...dataProps}
@@ -375,18 +359,14 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       ref={onRootRef}
     >
       <svg className="circular-range__grfx">
-        <circle
-          cx={64}
-          cy={64}
-          r={trackRadius}
-          className={classnames(
+        <path
+          className={classNames(
             'circular-range__track', {
               'circular-range__track--focus': focussed,
               'circular-range__track--disabled': rangeProps.disabled,
-              'circular-range__track--complete': progressComplete.current,
             },
           )}
-          ref={trackRef}
+          d={trackArc}
         />
         <path
           className={classnames(
@@ -396,7 +376,6 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
             },
           )}
           d={state.progressArc}
-          ref={progressRef}
         />
         <ellipse
           cx={multiple ? (props.counterClockwise ? -4 : 4) : 0}

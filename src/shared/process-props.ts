@@ -132,6 +132,8 @@ function getCircularRangeProps(
 ): Required<CircularRangeProps> {
   return {
     ...getRangeProps(props, baseProps, focussedKnob),
+    minDegrees: getNumber(props.minDegrees, 10),
+    maxDegrees: getNumber(props.maxDegrees, 350),
     zeroAtDegrees: getNumber(props.zeroAtDegrees, 0),
     counterClockwise: getValidBoolean(props.counterClockwise, false),
   };
