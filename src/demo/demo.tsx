@@ -20,10 +20,10 @@ export const Demo = () => {
       <h2>Circular Range</h2>
       <div>
         <label style={{ marginRight: '1rem' }}>Uncontrolled</label>
-        <CircularRange step={5} defaultValue={25} zeroAtDegrees={0} />
-        <CircularRange step={5} defaultValue={25} zeroAtDegrees={90} />
-        <CircularRange step={5} defaultValue={25} zeroAtDegrees={180} />
-        <CircularRange step={5} defaultValue={25} zeroAtDegrees={270} />
+        <CircularRange step={5} defaultValue={25} minDegrees={0} maxDegrees={350} />
+        <CircularRange step={5} defaultValue={25} minDegrees={90} maxDegrees={0} />
+        <CircularRange step={5} defaultValue={25} minDegrees={180} maxDegrees={90} />
+        <CircularRange step={5} defaultValue={25} minDegrees={270} maxDegrees={90} />
       </div>
 
       <div style={{ marginTop: '1rem' }}>

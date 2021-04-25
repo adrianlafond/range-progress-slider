@@ -9,7 +9,7 @@ import {
   COMPONENT,
 } from '../shared';
 import {
-  normalizeZeroAtDegrees,
+  normalizeDegrees,
   getCenterCoordinates,
   getPercentForValue,
   getRadiansForPercent,
@@ -46,19 +46,22 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   const multipleRangeProps: Required<MultipleRangeProps> | null = multiple ? rangeProps as Required<MultipleRangeProps> : null;
 
   // Ensures zeroAtDegrees is a value between 0 and 360.
-  const { zeroAtDegrees, zeroAtRadians } = React.useMemo(() => {
-    return normalizeZeroAtDegrees(rangeProps.zeroAtDegrees);
+  const { degrees: zeroAtDegrees, radians: zeroAtRadians } = React.useMemo(() => {
+    return normalizeDegrees(rangeProps.zeroAtDegrees);
   }, [rangeProps.zeroAtDegrees]);
+
+  const { radians: minRadians } = React.useMemo(() => normalizeDegrees(rangeProps.minDegrees), [rangeProps.minDegrees]);
+  const { radians: maxRadians } = React.useMemo(() => normalizeDegrees(rangeProps.maxDegrees), [rangeProps.maxDegrees]);
 
   const [state, setState] = React.useState((() => {
     const value = singleRangeProps ? [singleRangeProps.value, 0]
       : multipleRangeProps ? multipleRangeProps.value : [0, 0];
     const percent1 = getPercentForValue(value[0], rangeProps);
     const radians1 =
-      getRadiansForPercent({ percent: percent1, counterClockwise: props.counterClockwise, zeroAtRadians });
+      getRadiansForPercent({ percent: percent1, counterClockwise: props.counterClockwise, minRadians, maxRadians });
     const percent2 = multiple ? getPercentForValue(value[1], rangeProps) : 0;
     const radians2 = multiple ?
-      getRadiansForPercent({ percent: percent2, counterClockwise: props.counterClockwise, zeroAtRadians }) : 0;
+      getRadiansForPercent({ percent: percent2, counterClockwise: props.counterClockwise, minRadians, maxRadians }) : 0;
     return {
       value,
       knobTransform: getKnobTransform({ center: trackCenter, radius: trackRadius, radians: radians1 }),
@@ -110,15 +113,6 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   React.useEffect(stopListeningForPointerMove);
 
   const trackArc = React.useMemo(() => {
-    // TODO: ensure maxDegrees > minDegrees
-    const minDeg = rangeProps.minDegrees + zeroAtDegrees % 360;
-    const maxDeg = rangeProps.maxDegrees + zeroAtDegrees % 360;
-    // const deltaDeg = maxDeg - minDeg;
-
-    const minRadians = minDeg / 180 * Math.PI - Math.PI * 0.5;
-    const maxRadians = maxDeg / 180 * Math.PI - Math.PI * 0.5;
-    console.log(zeroAtDegrees, minDeg, maxDeg);
-
     const pt1x = trackCenter + Math.cos(minRadians) * trackRadius;
     const pt1y = trackCenter + Math.sin(minRadians) * trackRadius;
 
@@ -131,20 +125,21 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
     return `M ${pt1x} ${pt1y} ` +
       `A ${trackRadius} ${trackRadius} 0 ${largeArc} ${sweep} ` +
       `${pt2x} ${pt2y}`;
-  }, [trackCenter, trackRadius, zeroAtRadians, rangeProps.minDegrees, rangeProps.maxDegrees]);
+  }, [trackCenter, trackRadius, minRadians, maxRadians]);
 
   const updateSingleKnobPosition = React.useCallback((value: number) => {
     if (rangeProps && inputRef.current && knobRef.current) {
       const percent = (value - rangeProps.min) / (rangeProps.max - rangeProps.min);
       const radians = getRadiansForPercent({
         percent,
-        zeroAtRadians,
+        minRadians,
+        maxRadians,
         counterClockwise: props.counterClockwise,
       });
 
       // Calculate x,y where the range starts (min or, usually, zero).
-      const pt1x = trackCenter + Math.cos(zeroAtRadians) * trackRadius;
-      const pt1y = trackCenter + Math.sin(zeroAtRadians) * trackRadius;
+      const pt1x = trackCenter + Math.cos(minRadians) * trackRadius;
+      const pt1y = trackCenter + Math.sin(minRadians) * trackRadius;
 
       // Calculate x,y for the knob (or where the range extends to).
       const knobX = trackCenter + Math.cos(radians) * trackRadius;
@@ -156,7 +151,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       });
 
       // Calculate large arc and sweep values to draw the arc.
-      const radiansOffset = radians - zeroAtRadians;
+      const radiansOffset = radians - minRadians;
       const largeArc = props.counterClockwise
         ? (radiansOffset < Math.PI ? 1 : 0)
         : (radiansOffset < Math.PI ? 0 : 1);
@@ -175,7 +170,7 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
         value: [value, state.value[1]],
       };
     }
-  }, [rangeProps, zeroAtRadians, props.counterClockwise, trackCenter, state]);
+  }, [rangeProps, minRadians, maxRadians, props.counterClockwise, trackCenter, state]);
 
   const updateMultipleKnobPositions = React.useCallback((value = [0, 0]) => {
     if (rangeProps && knobRef.current && knobRef2.current && multipleInputRef1.current && multipleInputRef2.current) {
@@ -183,8 +178,8 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       const perc2 = (value[1] - rangeProps.min) / (rangeProps.max - rangeProps.min);
 
       const counterClockwise = props.counterClockwise;
-      const radians1 = getRadiansForPercent({ percent: perc1, counterClockwise, zeroAtRadians });
-      const radians2 = getRadiansForPercent({ percent: perc2, counterClockwise, zeroAtRadians });
+      const radians1 = getRadiansForPercent({ percent: perc1, counterClockwise, minRadians, maxRadians });
+      const radians2 = getRadiansForPercent({ percent: perc2, counterClockwise, minRadians, maxRadians });
 
       // Calculate x,y for the first knob.
       const pt1x = trackCenter + Math.cos(radians1) * trackRadius;
@@ -245,20 +240,21 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
   // TODO: ensure the event in props.onChange() has correct value(s).
   function onInternalChange(event: React.ChangeEvent<HTMLInputElement>) {
     const targetValue = event.target.value;
+    const value = [...state.value] as [number, number];
 
     if (singleRangeProps) {
+      value[0] = +targetValue;
       singleRangeProps.onChange(event);
     } else if (multipleRangeProps) {
       const multipleEvent = event as RangeMultipleChangeEvent;
+      value[0] = focussedKnob === 0 ? +targetValue : value[0];
+      value[1] = focussedKnob === 1 ? +targetValue : value[1];
       multipleEvent.knob = focussedKnob;
-      multipleEvent.value = [
-        focussedKnob === 0 ? +targetValue : +(multipleInputRef1.current?.value || 0),
-        focussedKnob === 1 ? +targetValue : +(multipleInputRef2.current?.value || 0),
-      ];
+      multipleEvent.value = value;
       multipleRangeProps.onChange(multipleEvent);
     }
 
-    updateKnobPositions();
+    updateKnobPositions(value);
   }
 
   // When the primary input is focussed or blurred, sets the focussed state for
@@ -303,15 +299,21 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
     // Because the default is prevented, the input must be focussed manually.
     (event.target as HTMLInputElement).focus();
 
-    if (multiple) {
+    const value = [...state.value] as [number, number];
+    const pointerValue = getValueFromPointer(getValueFromPointerParams(event.nativeEvent));
+
+    if (singleRangeProps) {
+      value[0] = pointerValue;
+    } else if (multipleRangeProps) {
+      value[0] = focussedKnob === 0 ? pointerValue : value[0];
+      value[1] = focussedKnob === 1 ? pointerValue : value[1];
+
       // TODO: find the closest knob and focus it.
       const nextFocussedKnob = 0;
       setFocussedKnob(nextFocussedKnob);
     }
 
-    // const value = getValueFromPointer(getValueFromPointerParams(event.nativeEvent));
-    // updateInputs(value);
-    updateKnobPositions();
+    updateKnobPositions(value);
     registerForPointerMove();
   }
 
@@ -346,7 +348,8 @@ export const CircularRange: React.FC<CircularRangeProps> = React.memo((props: Ci
       min: rangeProps.min,
       max: rangeProps.max,
       counterClockwise: !!props.counterClockwise,
-      zeroAtDegrees,
+      minRadians,
+      maxRadians,
       currentValue: inputRef.current ? +inputRef.current.value : 0 / 0,
     };
   }

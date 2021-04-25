@@ -1,16 +1,18 @@
 /**
- * Normalizes the zeroAtDegrees prop and returns the value converted to a number
- * between 0 and 360 and also and also converted to radians.
+ * Normalizes the minDegrees and maxDegrees props and returns the value
+ * converted to a number between 0 and 360 and also and also converted to radians.
  */
-export function normalizeZeroAtDegrees(zeroAtDegrees?: number) {
-  const zeroProp = zeroAtDegrees != null ? zeroAtDegrees : 0;
-  const modulo360 = zeroProp % 360;
+export function normalizeDegrees(propDegrees?: number) {
+  const modulo360 = (propDegrees != null ? propDegrees : 0) % 360;
   const degrees: number = modulo360 < 0 ? modulo360 + 360 : modulo360;
 
   // Convert to radians while keeping 0 at 12:00.
-  const radians: number = degrees / 180 * Math.PI - Math.PI * 0.5;
+  let radians: number = degrees / 180 * Math.PI - Math.PI * 0.5;
+  if (radians < 0) {
+    radians += Math.PI * 2;
+  }
 
-  return { zeroAtDegrees: degrees, zeroAtRadians: radians };
+  return { degrees, radians };
 }
 
 /**
@@ -32,17 +34,19 @@ export function getPercentForValue(value: number, { min, max }: { min: number, m
   return (value - min) / (max - min);
 }
 
-export function getRadiansForPercent({ percent, counterClockwise, zeroAtRadians }: {
+export function getRadiansForPercent({ percent, counterClockwise, minRadians, maxRadians }: {
   percent: number;
   counterClockwise?: boolean;
-  zeroAtRadians: number;
+  minRadians: number;
+  maxRadians: number;
 }) {
   // Convert percent to radians and offset by zeroAtRadians.
   let radians = percent * (Math.PI * 2);
   if (counterClockwise) {
     radians = Math.PI * 2 - radians;
   }
-  radians += zeroAtRadians;
+  radians += minRadians;
+  // console.log(radians.toFixed(2), minRadians.toFixed(2), maxRadians.toFixed(2));
   return radians;
 }
 
@@ -74,7 +78,8 @@ export function getValueFromPointer({
   min,
   max,
   counterClockwise,
-  zeroAtDegrees,
+  minRadians,
+  maxRadians,
   currentValue,
 }: {
   event: MouseTouchEvent
@@ -82,7 +87,8 @@ export function getValueFromPointer({
   min: number;
   max: number;
   counterClockwise: boolean;
-  zeroAtDegrees: number;
+  minRadians: number;
+  maxRadians: number;
   currentValue: number;
 }) {
   if (centerCoords) {
@@ -93,7 +99,7 @@ export function getValueFromPointer({
     let radians = Math.atan2(clientY - cy, clientX - cx);
 
     // Set radians back to 0 or 12:00:
-    radians += Math.PI * 0.5;
+    // radians += Math.PI * 0.5;
 
     if (radians < 0) {
       // Ensure 0 <= radians <= 6.28:
@@ -105,11 +111,29 @@ export function getValueFromPointer({
       radians = Math.PI * 2 - radians;
     }
 
+    const normMaxRadians = maxRadians < minRadians ? maxRadians + Math.PI * 2 : maxRadians;
+    const highRadians = radians + Math.PI * 2;
+
+    let normRadians = radians;
+    if (radians >= minRadians && radians <= normMaxRadians) {
+      // fine
+    } else if (highRadians >= minRadians && highRadians <= normMaxRadians) {
+      // fine
+    } else {
+      const d1 = radians < minRadians ? minRadians - radians : Number.MAX_VALUE;
+      const d2 = highRadians > normMaxRadians ? highRadians - normMaxRadians : Number.MAX_VALUE;
+      if (d1 < d2) {
+        normRadians = minRadians;
+      } else {
+        normRadians = normMaxRadians;
+      }
+    }
+
     // Convert the radians to a percent:
-    let percent = radians / (Math.PI * 2);
+    let percent = normRadians / (Math.PI * 2);
 
     // Account for prop zeroAtDegrees:
-    percent -= (counterClockwise ? -1 : 1) * (zeroAtDegrees / 360);
+    percent -= (counterClockwise ? -1 : 1) * (minRadians / (Math.PI * 2));
     percent %= 1;
     if (percent < 0) {
       percent += 1;
