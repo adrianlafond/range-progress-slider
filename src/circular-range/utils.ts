@@ -69,6 +69,63 @@ export function getKnobTransform({ center, radius, radians }: {
 }
 
 /**
+ * Converts the angle of the mouse/touch from the center into radians constained
+ * by minRadians and maxRadians.
+ */
+export function getRadiansFromPointer({
+  event,
+  centerCoords,
+  counterClockwise,
+  minRadians,
+  maxRadians,
+}: {
+    event: MouseTouchEvent
+    centerCoords: [number, number];
+    counterClockwise: boolean;
+    minRadians: number;
+    maxRadians: number;
+}) {
+  // Get radians between mouse and center of track:
+  const [cx, cy] = centerCoords;
+
+  const { clientX, clientY } = getClientCoordinates(event);
+  let radians = Math.atan2(clientY - cy, clientX - cx);
+
+  // Set radians back to 0 or 12:00:
+  // radians += Math.PI * 0.5;
+
+  if (radians < 0) {
+    // Ensure 0 <= radians <= 6.28:
+    radians += Math.PI * 2;
+  }
+
+  if (counterClockwise) {
+    // "Flip" the radians to get counter-clockwise values:
+    radians = Math.PI * 2 - radians;
+  }
+
+  const normMaxRadians = maxRadians < minRadians ? maxRadians + Math.PI * 2 : maxRadians;
+  const highRadians = radians + Math.PI * 2;
+
+  let normRadians = radians;
+  if (radians >= minRadians && radians <= normMaxRadians) {
+    // fine
+  } else if (highRadians >= minRadians && highRadians <= normMaxRadians) {
+    // fine
+  } else {
+    const d1 = radians < minRadians ? minRadians - radians : Number.MAX_VALUE;
+    const d2 = highRadians > normMaxRadians ? highRadians - normMaxRadians : Number.MAX_VALUE;
+    if (d1 < d2) {
+      normRadians = minRadians;
+    } else {
+      normRadians = normMaxRadians;
+    }
+  }
+
+  return normRadians;
+}
+
+/**
  * Converts the angle of the mouse from the center into a value between the
  * input's min and max.
  */
@@ -92,45 +149,10 @@ export function getValueFromPointer({
   currentValue: number;
 }) {
   if (centerCoords) {
-    // Get radians between mouse and center of track:
-    const [cx, cy] = centerCoords;
-
-    const { clientX, clientY } = getClientCoordinates(event);
-    let radians = Math.atan2(clientY - cy, clientX - cx);
-
-    // Set radians back to 0 or 12:00:
-    // radians += Math.PI * 0.5;
-
-    if (radians < 0) {
-      // Ensure 0 <= radians <= 6.28:
-      radians += Math.PI * 2;
-    }
-
-    if (counterClockwise) {
-      // "Flip" the radians to get counter-clockwise values:
-      radians = Math.PI * 2 - radians;
-    }
-
-    const normMaxRadians = maxRadians < minRadians ? maxRadians + Math.PI * 2 : maxRadians;
-    const highRadians = radians + Math.PI * 2;
-
-    let normRadians = radians;
-    if (radians >= minRadians && radians <= normMaxRadians) {
-      // fine
-    } else if (highRadians >= minRadians && highRadians <= normMaxRadians) {
-      // fine
-    } else {
-      const d1 = radians < minRadians ? minRadians - radians : Number.MAX_VALUE;
-      const d2 = highRadians > normMaxRadians ? highRadians - normMaxRadians : Number.MAX_VALUE;
-      if (d1 < d2) {
-        normRadians = minRadians;
-      } else {
-        normRadians = normMaxRadians;
-      }
-    }
+    const radians = getRadiansFromPointer({ event, centerCoords, counterClockwise, minRadians, maxRadians});
 
     // Convert the radians to a percent:
-    let percent = normRadians / (Math.PI * 2);
+    let percent = radians / (Math.PI * 2);
 
     // Account for prop zeroAtDegrees:
     percent -= (counterClockwise ? -1 : 1) * (minRadians / (Math.PI * 2));
@@ -138,6 +160,7 @@ export function getValueFromPointer({
     if (percent < 0) {
       percent += 1;
     }
+    console.log(percent);
 
     const value = min + percent * (max - min);
     if (isNaN(currentValue)) {
