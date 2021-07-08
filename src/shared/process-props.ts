@@ -1,4 +1,4 @@
-import { BaseRangeProps, RangeProps, defaultRangeProps, MultipleRangeProps } from './props';
+import { BaseRangeProps, RangeProps, defaultRangeProps, MultipleRangeProps, CircularRangeProps } from './props';
 
 interface ProcessedProps {
   multiple: boolean;
@@ -7,16 +7,50 @@ interface ProcessedProps {
   otherProps: { [key: string]: any };
 }
 
+interface ProressedCircularRangeProps extends Omit<ProcessedProps, 'rangeProps'> {
+  rangeProps: Required<CircularRangeProps>;
+}
+
 /**
  * Takes raw props where virtually all properties are optional and returns an
- * object ready for use by a component with default values supplied.
+ * object ready for use by a horizontal range component with default values supplied.
  */
-export function processProps(props: { [key: string]: any } = {}, focussedKnob: 0 | 1 = 0): ProcessedProps {
+export function processHorizontalRangeProps(props: { [key: string]: any } = {}, focussedKnob: 0 | 1 = 0): ProcessedProps {
+  return processProps(props, focussedKnob);
+}
+
+/**
+ * Takes raw props where virtually all properties are optional and returns an
+ * object ready for use by a vertical range component with default values supplied.
+ */
+export function processVerticalRangeProps(props: { [key: string]: any } = {}, focussedKnob: 0 | 1 = 0): ProcessedProps {
+  return processProps(props, focussedKnob);
+}
+
+/**
+ * Takes raw props where virtually all properties are optional and returns an
+ * object ready for use by a circular range component with default values supplied.
+ */
+export function processCircularRangeProps(props: { [key: string]: any } = {}, focussedKnob: 0 | 1 = 0): ProressedCircularRangeProps {
+  const multiple = getValueMultiple(props.multiple);
+  const baseProps = getBaseProps(props);
+  const rangeProps = getCircularRangeProps(props, baseProps, focussedKnob);
+  const dataProps = getDataProps(props);
+  const otherProps = getOtherProps(props, rangeProps);
+  return {
+    multiple,
+    rangeProps,
+    dataProps,
+    otherProps,
+  };
+}
+
+function processProps(props: { [key: string]: any } = {}, focussedKnob: 0 | 1 = 0): ProcessedProps {
   const multiple = getValueMultiple(props.multiple);
   const baseProps = getBaseProps(props);
   const rangeProps = getRangeProps(props, baseProps, focussedKnob);
   const dataProps = getDataProps(props);
-  const otherProps = getOtherProps(props, rangeProps);
+  const otherProps = getOtherProps<CircularRangeProps>(props, rangeProps);
   return {
     multiple,
     rangeProps,
@@ -91,6 +125,20 @@ function getRangeProps(
   } as Required<RangeProps>;
 }
 
+function getCircularRangeProps(
+  props: CircularRangeProps,
+  baseProps: Required<BaseRangeProps>,
+  focussedKnob: 0 | 1
+): Required<CircularRangeProps> {
+  return {
+    ...getRangeProps(props, baseProps, focussedKnob),
+    minDegrees: getNumber(props.minDegrees, 10),
+    maxDegrees: getNumber(props.maxDegrees, 350),
+    zeroAtDegrees: getNumber(props.zeroAtDegrees, 0),
+    counterClockwise: getValidBoolean(props.counterClockwise, false),
+  };
+}
+
 /**
  * Returns an object filtered to property names that start with "data-".
  */
@@ -105,9 +153,10 @@ function getDataProps(props: RangeProps) {
 
 /**
  * Returns an object with all other props; i.e., props that are not data attributes,
- * SingleRangeProps, or MultipleRangeProps.
+ * SingleRangeProps, or MultipleRangeProps. Other props will be applied to the
+ * primary `<input>`.
  */
-function getOtherProps(props: RangeProps, componentProps: { [key: string]: any }) {
+function getOtherProps<T = RangeProps>(props: T, componentProps: { [key: string]: any }) {
   const hostKeys = [...Object.keys(componentProps), 'style', 'className'];
   return Object.keys(props)
     .filter(propName => !propName.startsWith('data-') && hostKeys.indexOf(propName) === -1)

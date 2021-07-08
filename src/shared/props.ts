@@ -34,6 +34,15 @@ export interface MultipleRangeProps extends BaseRangeProps {
 
 export type RangeProps = (SingleRangeProps | MultipleRangeProps) & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'defaultValue' | 'onChange'>;
 
+export interface AdditionalCircularRangeProps {
+  minDegrees?: number;
+  maxDegrees?: number;
+  zeroAtDegrees?: number;
+  counterClockwise?: boolean;
+}
+
+export type CircularRangeProps = RangeProps & AdditionalCircularRangeProps;
+
 export interface RangeMultipleChangeEvent<T = HTMLInputElement> extends React.ChangeEvent<T> {
   knob: 0 | 1;
   value: [number, number];
